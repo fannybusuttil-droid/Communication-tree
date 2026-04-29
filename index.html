@@ -3,6 +3,7 @@
 <title>Belita Communication Tree v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
+<script src="export.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -245,12 +246,7 @@ function saveCT(){
   render();
 }
 
-function exportExcel(){
-  var wb=XLSX.utils.book_new(),d=[["ID","Name","Title","Dept","Level","Base","Phone","Email"]];
-  STAFF.forEach(function(s){d.push([s.id,s.name,s.title,s.dept,s.level,s.base,s.phone,s.email]);});
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(d),"Staff");
-  XLSX.writeFile(wb,"Belita_Staff.xlsx");
-}
+// exportExcel() is in export.js
 function exportPDF(){
   var el=document.getElementById('orgchart-export');if(!el){alert('Aller dans Org Chart pour exporter');return;}
   html2canvas(el,{scale:3,useCORS:true,logging:false,backgroundColor:'#F4F7F6'}).then(function(canvas){
@@ -308,8 +304,9 @@ function showQRDept(base,dept){
     var c=document.getElementById("qr-target");
     if(!c)return;
     var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
-    var data=deptStaff.map(function(s){
-      return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTEL:'+s.phone+'\nEND:VCARD';
+    // Simple text: Name + Phone, one per line
+    var data=dept+' — '+base+'\n'+deptStaff.map(function(s){
+      return s.name+': '+s.phone;
     }).join('\n');
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
@@ -333,9 +330,9 @@ function showQR(base,id){
       var baseStaff=STAFF.filter(function(s){return s.base===base;});
       // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
       var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
-      data=keyStaff.map(function(s){
-        return s.name+' | '+s.title+'\n'+s.phone;
-      }).join('\n---\n');
+      data='Managers '+base+'\n'+keyStaff.map(function(s){
+        return s.name+': '+s.phone;
+      }).join('\n');
     } else {
       data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTEL:'+p.phone+'\nEND:VCARD';
     }
