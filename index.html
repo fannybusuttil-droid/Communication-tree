@@ -101,12 +101,6 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 <div id="app"></div>
 <script>
 // ═══════════════════════════════════════════
-// SUPABASE — REMPLACE CES 2 VALEURS
-// ═══════════════════════════════════════════
-const SUPABASE_URL = "Chttps://dsedhkyfduwvxrjsinls.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_ZZ9N3iRlowOlUkLG4Nhg3g_XgDPXP8j";
-// ═══════════════════════════════════════════
-
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var AUTH = { user: null, org_id: null, role: null };
