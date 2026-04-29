@@ -6,6 +6,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F2F4F3;font-family:"DM Sans",sans-serif;font-size:13px;user-select:none}
@@ -95,9 +96,138 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 .config-option:last-child{border-bottom:none}
 .config-label{font-weight:600;color:#1C2B2A}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body>
 <div id="app"></div>
 <script>
+// ═══════════════════════════════════════════════════
+// SUPABASE CONFIG — REMPLACE CES 2 VALEURS
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = "https://dsedhkyfduwvxrjsinls.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "dsedhkyfduwvxrjsinls";
+// ═══════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var AUTH = { user: null, org_id: null, role: null };
+
+function renderLogin(msg) {
+  document.getElementById("app").innerHTML =
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center;padding:20px">'
+    +'<div style="background:#FAFAF8;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="text-align:center;margin-bottom:28px">'
+    +'<div style="width:44px;height:44px;border-radius:10px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px">&#x2B21;</div>'
+    +'<div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#1C2B2A">Belita</div>'
+    +'<div style="font-size:9px;color:#C9A84C;letter-spacing:.18em;text-transform:uppercase">Communication Tree v4.5</div>'
+    +'</div>'
+    +(msg?'<div style="background:#FEF5F5;border:1px solid #C0392B;border-radius:6px;padding:8px 12px;font-size:11px;color:#C0392B;margin-bottom:14px;text-align:center">'+msg+'</div>':'')
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
+    +'<input id="login-email" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif"></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
+    +'<input id="login-pass" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif" onkeydown="if(event.key==='Enter')doLogin()"></div>'
+    +'<button onclick="doLogin()" style="width:100%;padding:11px;background:#1A6B65;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.04em">Se connecter</button>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="showSignup()" style="font-size:10px;color:#1A6B65;text-decoration:none">Pas encore de compte ? Créer un accès</a></div>'
+    +'<div style="text-align:center;margin-top:20px;font-size:9px;color:#aaa">🔒 Accès sécurisé — Belita NGO</div>'
+    +'</div></div>';
+}
+
+function showSignup() {
+  document.getElementById("app").innerHTML =
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center;padding:20px">'
+    +'<div style="background:#FAFAF8;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="text-align:center;margin-bottom:24px">'
+    +'<div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C2B2A">Créer un accès</div>'
+    +'<div style="font-size:10px;color:#4A6361;margin-top:4px">Vous serez admin de votre organisation</div></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
+    +'<input id="su-email" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
+    +'<input id="su-pass" type="password" placeholder="Min 6 caractères" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Organisation</label>'
+    +'<input id="su-org" type="text" placeholder="ex: Belita NGO" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<button onclick="doSignup()" style="width:100%;padding:11px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Créer mon compte</button>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="renderLogin()" style="font-size:10px;color:#1A6B65;text-decoration:none">← Retour connexion</a></div>'
+    +'</div></div>';
+}
+
+async function doLogin() {
+  var email=document.getElementById("login-email").value.trim();
+  var pass=document.getElementById("login-pass").value;
+  if(!email||!pass)return renderLogin("Remplir email et mot de passe");
+  var r=await sb.auth.signInWithPassword({email:email,password:pass});
+  if(r.error)return renderLogin("❌ "+r.error.message);
+  await loadUserProfile(r.data.user);
+}
+
+async function doSignup() {
+  var email=document.getElementById("su-email").value.trim();
+  var pass=document.getElementById("su-pass").value;
+  var orgName=document.getElementById("su-org").value.trim();
+  if(!email||!pass||!orgName){alert("Remplir tous les champs");return;}
+  var orgR=await sb.from("organizations").insert({name:orgName}).select().single();
+  if(orgR.error){alert("Erreur org: "+orgR.error.message);return;}
+  var authR=await sb.auth.signUp({email:email,password:pass});
+  if(authR.error){alert("Erreur: "+authR.error.message);return;}
+  await sb.from("users").insert({id:authR.data.user.id,email:email,org_id:orgR.data.id,role:"admin"});
+  alert("✅ Compte créé ! Vérifie ton email puis connecte-toi.");
+  renderLogin();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  AUTH={user:null,org_id:null,role:null};
+  renderLogin();
+}
+
+async function loadUserProfile(user) {
+  var r=await sb.from("users").select("org_id,role").eq("id",user.id).single();
+  if(r.error||!r.data){
+    document.getElementById("app").innerHTML=
+      '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center">'
+      +'<div style="background:white;border-radius:12px;padding:30px;max-width:360px;text-align:center">'
+      +'<div style="font-size:28px;margin-bottom:12px">⏳</div>'
+      +'<div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:8px">Accès en attente</div>'
+      +'<div style="font-size:11px;color:#4A6361;margin-bottom:20px">Un administrateur doit valider votre accès.</div>'
+      +'<button onclick="doLogout()" style="padding:8px 20px;background:#1A6B65;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px">Se déconnecter</button>'
+      +'</div></div>';
+    return;
+  }
+  AUTH={user:user,org_id:r.data.org_id,role:r.data.role};
+  await loadStaffFromDB();
+  loadTree();render();
+}
+
+async function loadStaffFromDB() {
+  var r=await sb.from("staff").select("*").eq("org_id",AUTH.org_id).order("base").order("name");
+  if(r.error){console.error("Load staff:",r.error);return;}
+  if(r.data&&r.data.length>0){
+    STAFF=r.data.map(function(s){return {id:s.id,base:s.base,name:s.name,title:s.title,dept:s.dept,level:s.level,reportsTo:s.reports_to||"",phone:s.phone||"",email:s.email||""};});
+  }
+}
+
+async function insertStaffToDB(s) {
+  var r=await sb.from("staff").insert({id:s.id,org_id:AUTH.org_id,base:s.base,name:s.name,title:s.title,dept:s.dept,level:s.level,reports_to:s.reportsTo,phone:s.phone,email:s.email});
+  if(r.error){alert("Erreur Supabase: "+r.error.message);return false;}
+  return true;
+}
+
+async function deleteStaffFromDB(id) {
+  var r=await sb.from("staff").delete().eq("id",id).eq("org_id",AUTH.org_id);
+  if(r.error){alert("Erreur suppression: "+r.error.message);return false;}
+  return true;
+}
+
+async function init() {
+  document.getElementById("app").innerHTML=
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center">'
+    +'<div style="text-align:center;color:white">'
+    +'<div style="font-family:'Cormorant Garamond',serif;font-size:26px;margin-bottom:8px">Belita</div>'
+    +'<div style="font-size:10px;color:#C9A84C;letter-spacing:.14em">CHARGEMENT...</div>'
+    +'</div></div>';
+  var r=await sb.auth.getSession();
+  if(r.data.session){await loadUserProfile(r.data.session.user);}
+  else{renderLogin();}
+}
 var STAFF=[{"id":"GAZ-001","base":"Gaza","name":"Dr. Layla Al-Masri","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+972 59 400 1001","email":"layla.almasri@belita.org"},{"id":"GAZ-002","base":"Gaza","name":"Mahmoud Barakat","title":"Deputy Director","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1002","email":"mahmoud.barakat@belita.org"},{"id":"GAZ-003","base":"Gaza","name":"Amal Shehada","title":"Health Programme Manager","dept":"Health","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1003","email":"amal.shehada@belita.org"},{"id":"GAZ-004","base":"Gaza","name":"Dr. Yusuf Khalid","title":"Medical Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1004","email":"yusuf.khalid@belita.org"},{"id":"GAZ-005","base":"Gaza","name":"Rana Hamdan","title":"Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1005","email":"rana.hamdan@belita.org"},{"id":"GAZ-006","base":"Gaza","name":"Tariq Mansour","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1006","email":"tariq.mansour@belita.org"},{"id":"GAZ-007","base":"Gaza","name":"Dina Ayyad","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1007","email":"dina.ayyad@belita.org"},{"id":"GAZ-008","base":"Gaza","name":"Faris Othman","title":"Logistics Manager","dept":"Logistics","reportsTo":"Mahmoud Barakat","level":"L2","phone":"+972 59 400 1008","email":"faris.othman@belita.org"},{"id":"GAZ-009","base":"Gaza","name":"Hiba Saqqa","title":"Logistics Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1009","email":"hiba.saqqa@belita.org"},{"id":"GAZ-010","base":"Gaza","name":"Walid Nassar","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Mahmoud Barakat","level":"L2","phone":"+972 59 400 1010","email":"walid.nassar@belita.org"},{"id":"GAZ-011","base":"Gaza","name":"Lina Badr","title":"WASH Manager","dept":"Water & Sanitation","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1011","email":"lina.badr@belita.org"},{"id":"GAZ-012","base":"Gaza","name":"Samir Ghazi","title":"WASH Field Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1012","email":"samir.ghazi@belita.org"},{"id":"GAZ-013","base":"Gaza","name":"Dr. Nour Al-Qattan","title":"Senior Medical Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1013","email":"nour.alqattan@belita.org"},{"id":"GAZ-014","base":"Gaza","name":"Reem Salama","title":"Psychosocial Support Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1014","email":"reem.salama@belita.org"},{"id":"GAZ-015","base":"Gaza","name":"Bilal Zureiq","title":"Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1015","email":"bilal.zureiq@belita.org"},{"id":"GAZ-016","base":"Gaza","name":"Siham Abu Khaled","title":"Midwife","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1016","email":"siham.abukh@belita.org"},{"id":"GAZ-017","base":"Gaza","name":"Omar Salim","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1017","email":"omar.salim@belita.org"},{"id":"GAZ-018","base":"Gaza","name":"Khadija Nasrallah","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1018","email":"khadija.nasrallah@belita.org"},{"id":"GAZ-019","base":"Gaza","name":"Wissam Barhoum","title":"Lab Technician","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1019","email":"wissam.barhoum@belita.org"},{"id":"GAZ-020","base":"Gaza","name":"Inas Tamimi","title":"Pharmacist","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L3","phone":"+972 59 400 1020","email":"inas.tamimi@belita.org"},{"id":"GAZ-021","base":"Gaza","name":"Ramzi Hamdouna","title":"Environmental Health Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1021","email":"ramzi.hamdouna@belita.org"},{"id":"GAZ-022","base":"Gaza","name":"Dr. Fatima Sarraj","title":"Paediatrician","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1022","email":"fatima.sarraj@belita.org"},{"id":"GAZ-023","base":"Gaza","name":"Haitham Joudeh","title":"Medical Driver","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1023","email":"haitham.joudeh@belita.org"},{"id":"GAZ-024","base":"Gaza","name":"Mais Abu Louz","title":"Nutrition Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1024","email":"mais.abulouz@belita.org"},{"id":"GAZ-025","base":"Gaza","name":"Tariq Asad","title":"Health Data Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1025","email":"tariq.asad@belita.org"},{"id":"GAZ-026","base":"Gaza","name":"Rula Shawish","title":"Infection Control Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1026","email":"rula.shawish@belita.org"},{"id":"GAZ-027","base":"Gaza","name":"Ahmad Dardouna","title":"Mobile Clinic Team Leader","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L3","phone":"+972 59 400 1027","email":"ahmad.dardouna@belita.org"},{"id":"GAZ-028","base":"Gaza","name":"Lana Qishawi","title":"Physiotherapist","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1028","email":"lana.qishawi@belita.org"},{"id":"GAZ-029","base":"Gaza","name":"Nasser Barakat","title":"Food Distribution TL","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L3","phone":"+972 59 400 1029","email":"nasser.barakat@belita.org"},{"id":"GAZ-030","base":"Gaza","name":"Hana Safi","title":"Distribution Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1030","email":"hana.safi@belita.org"},{"id":"GAZ-031","base":"Gaza","name":"Suleiman Khalaf","title":"Warehouse Assistant","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1031","email":"suleiman.khalaf@belita.org"},{"id":"GAZ-032","base":"Gaza","name":"Mira Odeh","title":"Beneficiary Reg. Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1032","email":"mira.odeh@belita.org"},{"id":"GAZ-033","base":"Gaza","name":"Ziad Al-Zein","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1033","email":"ziad.alzein@belita.org"},{"id":"GAZ-034","base":"Gaza","name":"Rouba Hasan","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1034","email":"rouba.hasan@belita.org"},{"id":"GAZ-035","base":"Gaza","name":"Marwan Musleh","title":"Supply Chain Assistant","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1035","email":"marwan.musleh@belita.org"},{"id":"GAZ-036","base":"Gaza","name":"Yara Qassem","title":"M&E Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1036","email":"yara.qassem@belita.org"},{"id":"GAZ-037","base":"Gaza","name":"Fouad Barghouth","title":"Kitchen Supervisor","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1037","email":"fouad.barghouth@belita.org"},{"id":"GAZ-038","base":"Gaza","name":"Asma Srour","title":"CVA Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1038","email":"asma.srour@belita.org"},{"id":"GAZ-039","base":"Gaza","name":"Bassam Arafat","title":"Senior Logistics Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1039","email":"bassam.arafat@belita.org"},{"id":"GAZ-040","base":"Gaza","name":"Dalal Masoud","title":"Procurement Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1040","email":"dalal.masoud@belita.org"},{"id":"GAZ-041","base":"Gaza","name":"Ramadan Nassar","title":"Fleet Manager","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1041","email":"ramadan.nassar@belita.org"},{"id":"GAZ-042","base":"Gaza","name":"Maha Zaqout","title":"Warehouse Manager","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1042","email":"maha.zaqout@belita.org"},{"id":"GAZ-043","base":"Gaza","name":"Ihab Salah","title":"Driver","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1043","email":"ihab.salah@belita.org"},{"id":"GAZ-044","base":"Gaza","name":"Tamer Jouda","title":"Driver","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1044","email":"tamer.jouda@belita.org"},{"id":"GAZ-045","base":"Gaza","name":"Khalil Matar","title":"Fleet Technician","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1045","email":"khalil.matar@belita.org"},{"id":"GAZ-046","base":"Gaza","name":"Yusra Mohsen","title":"Asset Officer","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1046","email":"yusra.mohsen@belita.org"},{"id":"GAZ-047","base":"Gaza","name":"Ismail Abed","title":"Customs Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1047","email":"ismail.abed@belita.org"},{"id":"GAZ-048","base":"Gaza","name":"Sana Baraka","title":"Logistics Clerk","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1048","email":"sana.baraka@belita.org"},{"id":"GAZ-049","base":"Gaza","name":"Saeed Abu Ghali","title":"Senior Civil Engineer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1049","email":"saeed.abughali@belita.org"},{"id":"GAZ-050","base":"Gaza","name":"Nadine Kahlout","title":"Architect","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1050","email":"nadine.kahlout@belita.org"},{"id":"GAZ-051","base":"Gaza","name":"Iyad Issa","title":"Electrical Engineer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1051","email":"iyad.issa@belita.org"},{"id":"GAZ-052","base":"Gaza","name":"Manal Hamad","title":"Construction Supervisor","dept":"Infrastructure","reportsTo":"Saeed Abu Ghali","level":"L4","phone":"+972 59 400 1052","email":"manal.hamad@belita.org"},{"id":"GAZ-053","base":"Gaza","name":"Nader Dawoud","title":"Construction Supervisor","dept":"Infrastructure","reportsTo":"Saeed Abu Ghali","level":"L4","phone":"+972 59 400 1053","email":"nader.dawoud@belita.org"},{"id":"GAZ-054","base":"Gaza","name":"Ola Shurrab","title":"Site Assessment Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1054","email":"ola.shurrab@belita.org"},{"id":"GAZ-055","base":"Gaza","name":"Raed Najjar","title":"MEP Technician","dept":"Infrastructure","reportsTo":"Iyad Issa","level":"L4","phone":"+972 59 400 1055","email":"raed.najjar@belita.org"},{"id":"GAZ-056","base":"Gaza","name":"Salwa Dabbour","title":"M&E Infra Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1056","email":"salwa.dabbour@belita.org"},{"id":"GAZ-057","base":"Gaza","name":"Fares Abu Salim","title":"Labourer Supervisor","dept":"Infrastructure","reportsTo":"Manal Hamad","level":"L4","phone":"+972 59 400 1057","email":"fares.abusalim@belita.org"},{"id":"GAZ-058","base":"Gaza","name":"Joumana Saqer","title":"Community Liaison","dept":"Infrastructure","reportsTo":"Nadine Kahlout","level":"L4","phone":"+972 59 400 1058","email":"joumana.saqer@belita.org"},{"id":"GAZ-059","base":"Gaza","name":"Muhannad Helles","title":"NFI Distribution Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1059","email":"muhannad.helles@belita.org"},{"id":"GAZ-060","base":"Gaza","name":"Sami Kafarna","title":"Senior WASH Engineer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1060","email":"sami.kafarna@belita.org"},{"id":"GAZ-061","base":"Gaza","name":"Randa Abu Salha","title":"WASH Programme Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1061","email":"randa.abusalha@belita.org"},{"id":"GAZ-062","base":"Gaza","name":"Issam Saloul","title":"Water Quality Technician","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L4","phone":"+972 59 400 1062","email":"issam.saloul@belita.org"},{"id":"GAZ-063","base":"Gaza","name":"Dina Hamdan","title":"Hygiene Promotion Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1063","email":"dina.hamdan@belita.org"},{"id":"GAZ-064","base":"Gaza","name":"Amr Badawi","title":"Sanitation Field Worker","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L4","phone":"+972 59 400 1064","email":"amr.badawi@belita.org"},{"id":"GAZ-065","base":"Gaza","name":"Heba Ashour","title":"WASH Community Mobiliser","dept":"Water & Sanitation","reportsTo":"Dina Hamdan","level":"L4","phone":"+972 59 400 1065","email":"heba.ashour@belita.org"},{"id":"GAZ-066","base":"Gaza","name":"Khaled Jarbou","title":"Water Technician","dept":"Water & Sanitation","reportsTo":"Sami Kafarna","level":"L4","phone":"+972 59 400 1066","email":"khaled.jarbou@belita.org"},{"id":"GAZ-067","base":"Gaza","name":"Mervat Hassouna","title":"WASH Data Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1067","email":"mervat.hassouna@belita.org"},{"id":"GAZ-068","base":"Gaza","name":"Sherif Najim","title":"Desalination Technician","dept":"Water & Sanitation","reportsTo":"Sami Kafarna","level":"L4","phone":"+972 59 400 1068","email":"sherif.najim@belita.org"},{"id":"GAZ-069","base":"Gaza","name":"Farah Qdeih","title":"Solid Waste Officer","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L3","phone":"+972 59 400 1069","email":"farah.qdeih@belita.org"},{"id":"GAZ-070","base":"Gaza","name":"Adnan Salameh","title":"Security Focal Point","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1070","email":"adnan.salameh@belita.org"},{"id":"GAZ-071","base":"Gaza","name":"Rima Khalil","title":"HR Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1071","email":"rima.khalil@belita.org"},{"id":"GAZ-072","base":"Gaza","name":"Fadi Qasim","title":"Finance Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1072","email":"fadi.qasim@belita.org"},{"id":"GAZ-073","base":"Gaza","name":"Nadia Masri","title":"MEAL Manager","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1073","email":"nadia.masri@belita.org"},{"id":"GAZ-074","base":"Gaza","name":"Samer Haddad","title":"Communications Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1074","email":"samer.haddad@belita.org"},{"id":"GAZ-075","base":"Gaza","name":"Layla Nimr","title":"Admin Assistant","dept":"Coordination","reportsTo":"Rima Khalil","level":"L4","phone":"+972 59 400 1075","email":"layla.nimr@belita.org"},{"id":"GAZ-076","base":"Gaza","name":"Karim Barakat","title":"IT Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1076","email":"karim.barakat@belita.org"},{"id":"GAZ-077","base":"Gaza","name":"Dina Salama","title":"Driver / Admin","dept":"Coordination","reportsTo":"Rima Khalil","level":"L4","phone":"+972 59 400 1077","email":"dina.salama@belita.org"},{"id":"GAZ-078","base":"Gaza","name":"Yousef Srour","title":"Community Liaison Officer","dept":"Coordination","reportsTo":"Nadia Masri","level":"L3","phone":"+972 59 400 1078","email":"yousef.srour@belita.org"},{"id":"GAZ-079","base":"Gaza","name":"Hala Barghouth","title":"Donor Reporting Officer","dept":"Coordination","reportsTo":"Nadia Masri","level":"L3","phone":"+972 59 400 1079","email":"hala.barghouth@belita.org"},{"id":"GAZ-080","base":"Gaza","name":"Nour Mansour","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1080","email":"nour.mansour@belita.org"},{"id":"GAZ-081","base":"Gaza","name":"Sami Odeh","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1081","email":"sami.odeh@belita.org"},{"id":"GAZ-082","base":"Gaza","name":"Leen Baraka","title":"Nutrition Field Worker","dept":"Health","reportsTo":"Mais Abu Louz","level":"L4","phone":"+972 59 400 1082","email":"leen.baraka@belita.org"},{"id":"GAZ-083","base":"Gaza","name":"Mazen Najjar","title":"Nutrition Field Worker","dept":"Health","reportsTo":"Mais Abu Louz","level":"L4","phone":"+972 59 400 1083","email":"mazen.najjar@belita.org"},{"id":"GAZ-084","base":"Gaza","name":"Sana Qishawi","title":"MHPSS Field Worker","dept":"Health","reportsTo":"Reem Salama","level":"L4","phone":"+972 59 400 1084","email":"sana.qishawi@belita.org"},{"id":"GAZ-085","base":"Gaza","name":"Tariq Zureiq","title":"MHPSS Field Worker","dept":"Health","reportsTo":"Reem Salama","level":"L4","phone":"+972 59 400 1085","email":"tariq.zureiq@belita.org"},{"id":"GAZ-086","base":"Gaza","name":"Ghada Salameh","title":"Physiotherapy Assistant","dept":"Health","reportsTo":"Lana Qishawi","level":"L4","phone":"+972 59 400 1086","email":"ghada.salameh@belita.org"},{"id":"GAZ-087","base":"Gaza","name":"Bilal Kafarna","title":"Driver Mobile Clinic","dept":"Health","reportsTo":"Ahmad Dardouna","level":"L4","phone":"+972 59 400 1087","email":"bilal.kafarna@belita.org"},{"id":"GAZ-088","base":"Gaza","name":"Rana Saqqa","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1088","email":"rana.saqqa@belita.org"},{"id":"GAZ-089","base":"Gaza","name":"Faris Joudeh","title":"Warehouse Technician","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1089","email":"faris.joudeh@belita.org"},{"id":"GAZ-090","base":"Gaza","name":"Amal Nassar","title":"Driver Logistics","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1090","email":"amal.nassar@belita.org"},{"id":"JRS-001","base":"Jerusalem","name":"Nadia Bishara","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+972 2 500 2001","email":"nadia.bishara@belita.org"},{"id":"JRS-002","base":"Jerusalem","name":"Elias Khoury","title":"Liaison Officer","dept":"Coordination","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2002","email":"elias.khoury@belita.org"},{"id":"JRS-003","base":"Jerusalem","name":"Dr. Mariam Haddad","title":"Health Programme Manager","dept":"Health","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2003","email":"mariam.haddad@belita.org"},{"id":"JRS-004","base":"Jerusalem","name":"Samer Awad","title":"Medical Officer","dept":"Health","reportsTo":"Dr. Mariam Haddad","level":"L3","phone":"+972 2 500 2004","email":"samer.awad@belita.org"},{"id":"JRS-005","base":"Jerusalem","name":"Rula Sayegh","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2005","email":"rula.sayegh@belita.org"},{"id":"JRS-006","base":"Jerusalem","name":"Bassem Qasim","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Rula Sayegh","level":"L3","phone":"+972 2 500 2006","email":"bassem.qasim@belita.org"},{"id":"JRS-007","base":"Jerusalem","name":"Dara Mansouri","title":"Logistics Manager","dept":"Logistics","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2007","email":"dara.mansouri@belita.org"},{"id":"JRS-008","base":"Jerusalem","name":"Kamal Nimer","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2008","email":"kamal.nimer@belita.org"},{"id":"JRS-009","base":"Jerusalem","name":"Yara Halabi","title":"WASH Officer","dept":"Water & Sanitation","reportsTo":"Kamal Nimer","level":"L3","phone":"+972 2 500 2009","email":"yara.halabi@belita.org"},{"id":"AMM-001","base":"Amman","name":"Rami Saleh","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+962 7 900 3001","email":"rami.saleh@belita.org"},{"id":"AMM-002","base":"Amman","name":"Soraya Nasser","title":"Deputy Director","dept":"Coordination","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3002","email":"soraya.nasser@belita.org"},{"id":"AMM-003","base":"Amman","name":"Dr. Jamal Hatem","title":"Health Programme Manager","dept":"Health","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3003","email":"jamal.hatem@belita.org"},{"id":"AMM-004","base":"Amman","name":"Hana Rifai","title":"Medical Officer","dept":"Health","reportsTo":"Dr. Jamal Hatem","level":"L3","phone":"+962 7 900 3004","email":"hana.rifai@belita.org"},{"id":"AMM-005","base":"Amman","name":"Ali Farouq","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3005","email":"ali.farouq@belita.org"},{"id":"AMM-006","base":"Amman","name":"Mona Tawil","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Ali Farouq","level":"L3","phone":"+962 7 900 3006","email":"mona.tawil@belita.org"},{"id":"AMM-007","base":"Amman","name":"Ibrahim Qaddoura","title":"Logistics Manager","dept":"Logistics","reportsTo":"Soraya Nasser","level":"L2","phone":"+962 7 900 3007","email":"ibrahim.qaddoura@belita.org"},{"id":"AMM-008","base":"Amman","name":"Nour Al-Ahmad","title":"Logistics Officer","dept":"Logistics","reportsTo":"Ibrahim Qaddoura","level":"L3","phone":"+962 7 900 3008","email":"nour.alahmad@belita.org"},{"id":"AMM-009","base":"Amman","name":"Leen Shukri","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Soraya Nasser","level":"L2","phone":"+962 7 900 3009","email":"leen.shukri@belita.org"},{"id":"AMM-010","base":"Amman","name":"Fadi Barghout","title":"WASH Manager","dept":"Water & Sanitation","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3010","email":"fadi.barghout@belita.org"},{"id":"AMM-011","base":"Amman","name":"Ghada Rahhal","title":"WASH Field Officer","dept":"Water & Sanitation","reportsTo":"Fadi Barghout","level":"L3","phone":"+962 7 900 3011","email":"ghada.rahhal@belita.org"}];
 
 const BC={Gaza:"#1A6B65",Jerusalem:"#1E4D8C",Amman:"#5C3A8C"};
@@ -164,14 +294,22 @@ function exportPDF(){
 }
 
 function showAddModal(){S.modal='addstaff';render();}
-function addStaff(){
+async function addStaff(){
   var f={name:document.getElementById('nn').value,title:document.getElementById('nt').value,dept:document.getElementById('nd').value,base:document.getElementById('nb').value,level:document.getElementById('nl').value,phone:document.getElementById('np').value,email:document.getElementById('ne').value,reportsTo:document.getElementById('nr').value};
   if(!f.name||!f.title||!f.dept||!f.base||!f.level){alert('Remplir les champs obligatoires');return;}
   var px=f.base.slice(0,3).toUpperCase(),nums=STAFF.filter(function(s){return s.id.startsWith(px);}).map(function(s){return parseInt(s.id.split('-')[1]);});
-  STAFF.push({id:px+'-'+(( nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo||"HQ (Beirut)",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"});
+  var newStaff={id:px+'-'+((nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo||"HQ (Beirut)",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"};
+  if(AUTH.org_id){var ok=await insertStaffToDB(newStaff);if(!ok)return;}
+  STAFF.push(newStaff);
   saveStaff();S.modal=null;render();
 }
-function rmStaff(id){var p=STAFF.find(function(s){return s.id===id;});if(!p||!confirm('Supprimer '+p.name+' ?'))return;STAFF=STAFF.filter(function(s){return s.id!==id;});saveStaff();render();}
+async function rmStaff(id){
+  var p=STAFF.find(function(s){return s.id===id;});
+  if(!p||!confirm('Supprimer '+p.name+' ?'))return;
+  if(AUTH.org_id){var ok=await deleteStaffFromDB(id);if(!ok)return;}
+  STAFF=STAFF.filter(function(s){return s.id!==id;});
+  saveStaff();render();
+}
 
 function showQR(base,id){
   S.qr=base?{base:base,person:null}:{base:null,person:STAFF.find(function(s){return s.id===id;})};
@@ -198,7 +336,7 @@ function renderNav(){
   var tb=tabs.map(function(t){return '<button class="ntab'+(S.tab===t?" on":"")+'" onclick="S.tab=\''+t+'\';render()">'+labels[t]+'</button>';}).join("");
   var kH=BASES.map(function(b){var n=STAFF.filter(function(s){return s.base===b;}).length;return '<div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:rgba(255,255,255,.9)">'+n+'</span><span class="kl">'+b+'</span></div>';}).join("");
   return '<div class="nav"><div class="brand"><div style="width:20px;height:20px;border-radius:4px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:10px">&#x2B21;</div>Belita<span class="brand-tag">Comm Tree</span></div><div style="display:flex;gap:4px;margin-left:auto">'+tb+'</div></div>'
-    +'<div class="kpi"><div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:#C9A84C">'+STAFF.length+'</span><span class="kl">Total</span></div><div class="ksep"></div>'+kH+'<span style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.35)">v4.4</span></div>';
+    +'<div class="kpi"><div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:#C9A84C">'+STAFF.length+'</span><span class="kl">Total</span></div><div class="ksep"></div>'+kH+'<span style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.35)">v4.5</span><button onclick="doLogout()" style="padding:3px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:4px;color:rgba(255,255,255,.6);font-size:9px;cursor:pointer;margin-left:8px">Logout</button></div>';
 }
 
 function renderDir(){
@@ -548,5 +686,5 @@ function render(){
   document.getElementById("app").innerHTML=renderNav()+'<div class="main">'+body+'</div>'+renderModal();
   if(S.tab==='commtree') attachTreeListeners();
 }
-loadStaff();loadTree();render();
+loadTree();init();
 </script></body></html>
