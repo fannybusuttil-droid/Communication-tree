@@ -270,12 +270,27 @@ function exportPDF(){
   });
 }
 
+function updateReportsTo(){
+  var base=document.getElementById('nb').value;
+  var sel=document.getElementById('nr');
+  if(!sel)return;
+  sel.innerHTML='<option value="NA">N/A — Directeur de base</option>';
+  if(!base){
+    sel.innerHTML+='<option value="" disabled>── Choisir une base d\'abord ──</option>';
+    return;
+  }
+  var baseStaff=STAFF.filter(function(s){return s.base===base;}).sort(function(a,b){return a.name.localeCompare(b.name);});
+  baseStaff.forEach(function(s){
+    sel.innerHTML+='<option value="'+s.name+'">'+s.name+' — '+s.title+' ('+s.level+')</option>';
+  });
+}
+
 function showAddModal(){S.modal='addstaff';render();}
 async function addStaff(){
   var f={name:document.getElementById('nn').value,title:document.getElementById('nt').value,dept:document.getElementById('nd').value,base:document.getElementById('nb').value,level:document.getElementById('nl').value,phone:document.getElementById('np').value,email:document.getElementById('ne').value,reportsTo:document.getElementById('nr').value};
   if(!f.name||!f.title||!f.dept||!f.base||!f.level){alert('Remplir les champs obligatoires');return;}
   var px=f.base.slice(0,3).toUpperCase(),nums=STAFF.filter(function(s){return s.id.startsWith(px);}).map(function(s){return parseInt(s.id.split('-')[1]);});
-  var ns={id:px+'-'+((nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo||"HQ (Beirut)",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"};
+  var ns={id:px+'-'+((nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo==="NA"?"N/A":f.reportsTo||"N/A",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"};
   if(AUTH.org_id){var r=await sb.from('staff').insert({id:ns.id,org_id:AUTH.org_id,base:ns.base,name:ns.name,title:ns.title,dept:ns.dept,level:ns.level,reports_to:ns.reportsTo,phone:ns.phone,email:ns.email});if(r.error){alert('Erreur: '+r.error.message);return;}}
   STAFF.push(ns);saveStaff();S.modal=null;render();
 }
@@ -293,9 +308,8 @@ function showQRDept(base,dept){
     var c=document.getElementById("qr-target");
     if(!c)return;
     var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
-    // Minimal format: name + phone only to keep QR scannable
     var data=deptStaff.map(function(s){
-      return s.name+' | '+s.phone;
+      return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTEL:'+s.phone+'\nEND:VCARD';
     }).join('\n');
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
@@ -323,7 +337,7 @@ function showQR(base,id){
         return s.name+' | '+s.title+'\n'+s.phone;
       }).join('\n---\n');
     } else {
-      data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTITLE:'+p.title+'\nORG:Belita - '+p.base+'\nTEL:'+p.phone+'\nEMAIL:'+p.email+'\nEND:VCARD';
+      data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTEL:'+p.phone+'\nEND:VCARD';
     }
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
@@ -687,7 +701,7 @@ function renderModal(){
       var cnt=STAFF.filter(function(s){return s.base===b&&s.dept===d;}).length;
       title="QR — "+d;sub=b+" • "+cnt+" staff";note="Scanner pour importer tous les contacts "+d+" de "+b+".";
     } else if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Managers";sub=cnt+" contacts clés (L1+L2) sur "+total+" staff";note="Scanner pour importer directeurs & managers de "+b+".";}
-    else{var p=S.qr.person;title=he(p.name);sub=he(p.title)+" • "+p.base;note="Scanner pour importer le contact.";}
+    else{var p=S.qr.person;title=he(p.name);sub=he(p.phone);note="Scanner pour importer le contact.";}
     return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
   }
   if(S.modal==='addstaff'){
@@ -696,10 +710,16 @@ function renderModal(){
     h+='<div class="form-group"><label class="form-label">Poste *</label><input class="form-input" id="nt" placeholder="Intitulé du poste"></div>';
     h+='<div class="form-group"><label class="form-label">Département *</label><select class="form-select" id="nd"><option value="">Choisir...</option>';
     DEPTS.forEach(function(d){h+='<option>'+d+'</option>';});
-    h+='</select></div><div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb"><option value="">Choisir...</option>';
+    h+='</select></div><div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb" onchange="updateReportsTo()"><option value="">Choisir...</option>';
     BASES.forEach(function(b){h+='<option>'+b+'</option>';});
     h+='</select></div><div class="form-group"><label class="form-label">Niveau *</label><select class="form-select" id="nl"><option value="">Choisir...</option><option value="L1">L1 — Directeur</option><option value="L2">L2 — Manager</option><option value="L3">L3 — Officer</option><option value="L4">L4 — Field Staff</option></select></div>';
-    h+='<div class="form-group"><label class="form-label">Rapporte à</label><input class="form-input" id="nr" placeholder="Nom superviseur ou HQ (Beirut)"></div>';
+    h+='<div class="form-group"><label class="form-label">Rapporte à</label>';
+    h+='<select class="form-select" id="nr" style="width:100%">';
+    h+='<option value="NA">N/A — Directeur de base</option>';
+    h+='<option value="" disabled>── Choisir une base d\'abord ──</option>';
+    h+='</select>';
+    h+='<div style="font-size:9px;color:#4A6361;margin-top:3px">Se met à jour selon la base sélectionnée</div>';
+    h+='</div>';
     h+='<div class="form-group"><label class="form-label">Téléphone</label><input class="form-input" id="np" placeholder="+000 00 000 0000"></div>';
     h+='<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="ne" placeholder="nom@belita.org"></div>';
     h+='<button class="mbtn" style="background:#C9A84C;color:#1C2B2A" onclick="addStaff()">Enregistrer</button><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Annuler</button></div></div>';
