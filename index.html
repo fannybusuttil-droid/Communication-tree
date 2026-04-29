@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="export.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -246,7 +246,133 @@ function saveCT(){
   render();
 }
 
-// exportExcel() is in export.js
+
+async function exportExcel(){
+  var wb = new ExcelJS.Workbook();
+  wb.creator = "Belita NGO";
+  wb.created = new Date();
+
+  var BASE_COLORS  = {Gaza:"1A6B65",Jerusalem:"1E4D8C",Amman:"5C3A8C"};
+  var LEVEL_COLORS = {L1:"C9A84C",L2:"1A6B65",L3:"1E4D8C",L4:"888888"};
+  var DEPT_COLORS  = {"Health":"C0392B","Food Distribution":"D4891A","Logistics":"2471A3","Infrastructure":"7D6608","Water & Sanitation":"117A65","Coordination":"6C3483"};
+  var bases = ["Gaza","Jerusalem","Amman"];
+
+  function hdr(hex){return {type:"pattern",pattern:"solid",fgColor:{argb:"FF"+hex}};}
+  function fnt(hex,bold,size){return {name:"Calibri",color:{argb:"FF"+hex},bold:!!bold,size:size||10};}
+  function aln(h,v){return {horizontal:h||"left",vertical:v||"middle"};}
+  function bdr(){var s={style:"thin",color:{argb:"FFE2E6E5"}};return {bottom:s,right:s};}
+
+  bases.forEach(function(base){
+    var staff=STAFF.filter(function(s){return s.base===base;});
+    if(!staff.length)return;
+    staff.sort(function(a,b){return a.level!==b.level?a.level.localeCompare(b.level):a.name.localeCompare(b.name);});
+
+    var ws=wb.addWorksheet(base);
+    var bc=BASE_COLORS[base]||"1A6B65";
+
+    ws.columns=[
+      {key:"id",width:10},{key:"name",width:26},{key:"title",width:30},
+      {key:"dept",width:22},{key:"level",width:9},{key:"phone",width:20},
+      {key:"email",width:32},{key:"reports",width:26}
+    ];
+
+    // Header
+    var hRow=ws.addRow(["ID","Nom complet","Poste","Département","Niveau","Téléphone","Email","Rapporte à"]);
+    hRow.height=24;
+    hRow.eachCell(function(cell){
+      cell.font=fnt("FFFFFF",true,11);
+      cell.fill=hdr(bc);
+      cell.alignment=aln("center");
+    });
+
+    // Data
+    staff.forEach(function(s,i){
+      var rowBg=i%2===0?"F5F9F8":"FFFFFF";
+      var isKey=s.level==="L1"||s.level==="L2";
+      var lc=LEVEL_COLORS[s.level]||"888888";
+      var dc=DEPT_COLORS[s.dept]||"888888";
+      var row=ws.addRow([s.id,s.name,s.title,s.dept,s.level,s.phone,s.email,s.reportsTo||"—"]);
+      row.height=20;
+
+      row.getCell(1).font=fnt("1A6B65",true,9);
+      row.getCell(1).fill=hdr("E8F4F3");
+      row.getCell(1).alignment=aln("center");
+
+      row.getCell(2).font=fnt("1C2B2A",isKey,10);
+      row.getCell(2).fill=hdr(isKey?"FFFDF0":rowBg);
+
+      row.getCell(3).font=fnt("4A6361",false,10);
+      row.getCell(3).fill=hdr(rowBg);
+
+      row.getCell(4).font=fnt(dc,true,9);
+      row.getCell(4).fill=hdr(rowBg);
+
+      row.getCell(5).font=fnt("FFFFFF",true,10);
+      row.getCell(5).fill=hdr(lc);
+      row.getCell(5).alignment=aln("center");
+
+      row.getCell(6).font=fnt("1A6B65",false,10);
+      row.getCell(6).fill=hdr(rowBg);
+
+      row.getCell(7).font=fnt("4A6361",false,9);
+      row.getCell(7).fill=hdr(rowBg);
+
+      row.getCell(8).font=fnt("888888",false,9);
+      row.getCell(8).fill=hdr(rowBg);
+
+      row.eachCell(function(cell){cell.border=bdr();cell.alignment=aln("left","middle");});
+      row.getCell(1).alignment=aln("center","middle");
+      row.getCell(5).alignment=aln("center","middle");
+    });
+
+    ws.views=[{state:"frozen",ySplit:1}];
+  });
+
+  // Summary sheet
+  var wsSummary=wb.addWorksheet("Résumé");
+  wsSummary.columns=[{width:14},{width:13},{width:18},{width:18},{width:16},{width:18}];
+  var sumHRow=wsSummary.addRow(["Base","Total Staff","L1 — Directeurs","L2 — Managers","L3 — Officers","L4 — Field Staff"]);
+  sumHRow.height=26;
+  sumHRow.eachCell(function(cell){cell.font=fnt("FFFFFF",true,11);cell.fill=hdr("124E49");cell.alignment=aln("center");});
+
+  bases.forEach(function(base){
+    var bs=STAFF.filter(function(s){return s.base===base;});
+    var bc=BASE_COLORS[base]||"1A6B65";
+    var row=wsSummary.addRow([base,bs.length,
+      bs.filter(function(s){return s.level==="L1";}).length,
+      bs.filter(function(s){return s.level==="L2";}).length,
+      bs.filter(function(s){return s.level==="L3";}).length,
+      bs.filter(function(s){return s.level==="L4";}).length
+    ]);
+    row.height=22;
+    row.getCell(1).font=fnt("FFFFFF",true,11); row.getCell(1).fill=hdr(bc);
+    row.getCell(2).font=fnt("1C2B2A",true,11); row.getCell(2).fill=hdr(bc+"33");
+    [LEVEL_COLORS.L1,LEVEL_COLORS.L2,LEVEL_COLORS.L3,LEVEL_COLORS.L4].forEach(function(lc,i){
+      row.getCell(i+3).font=fnt("FFFFFF",true,11); row.getCell(i+3).fill=hdr(lc);
+    });
+    row.eachCell(function(cell){cell.alignment=aln("center");cell.border=bdr();});
+  });
+
+  var tRow=wsSummary.addRow(["TOTAL",STAFF.length,
+    STAFF.filter(function(s){return s.level==="L1";}).length,
+    STAFF.filter(function(s){return s.level==="L2";}).length,
+    STAFF.filter(function(s){return s.level==="L3";}).length,
+    STAFF.filter(function(s){return s.level==="L4";}).length
+  ]);
+  tRow.height=26;
+  tRow.eachCell(function(cell){cell.font=fnt("FFFFFF",true,12);cell.fill=hdr("124E49");cell.alignment=aln("center");});
+
+  // Download
+  var buf=await wb.xlsx.writeBuffer();
+  var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="Belita_Directory_"+new Date().toISOString().slice(0,10)+".xlsx";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportPDF(){
   var el=document.getElementById('orgchart-export');if(!el){alert('Aller dans Org Chart pour exporter');return;}
   html2canvas(el,{scale:3,useCORS:true,logging:false,backgroundColor:'#F4F7F6'}).then(function(canvas){
