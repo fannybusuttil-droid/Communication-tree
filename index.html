@@ -475,11 +475,7 @@ function showQRDept(base,dept){
     var c=document.getElementById("qr-target");
     if(!c)return;
     var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
-    // Simple text: Name + Phone, one per line
-    // Plain text format — prefix avoids auto-dial on phones
-    var data='== '+dept+' / '+base+' ==\n\n'+deptStaff.map(function(s){
-      return s.name+'\nTel: '+s.phone.replace(/\+/,'00');
-    }).join('\n\n');
+    var data=window.location.origin+'?base='+encodeURIComponent(base)+'&dept='+encodeURIComponent(dept);
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
     img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
