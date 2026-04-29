@@ -98,13 +98,6 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 </head><body>
 <div id="app"></div>
 <script>
-// ═══════════════════════════════════════════
-// SUPABASE — REMPLACE CES 2 VALEURS
-// ═══════════════════════════════════════════
-const SUPABASE_URL = "COLLE_TON_URL_ICI";
-const SUPABASE_ANON_KEY = "COLLE_TA_CLÉ_ICI";
-// ═══════════════════════════════════════════
-
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var AUTH = { user: null, org_id: null, role: null };
