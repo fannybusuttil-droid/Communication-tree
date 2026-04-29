@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <title>Belita Communication Tree v4.5</title>
-<script src="config.js"></script>  
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -99,6 +99,8 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 </head><body>
 <div id="app"></div>
 <script>
+// ═══════════════════════════════════════════
+
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var AUTH = { user: null, org_id: null, role: null };
@@ -284,6 +286,25 @@ async function rmStaff(id){
   STAFF=STAFF.filter(function(s){return s.id!==id;});saveStaff();render();
 }
 
+function showQRDept(base,dept){
+  S.qr={base:base,dept:dept,person:null};
+  S.modal='qr';render();
+  setTimeout(function(){
+    var c=document.getElementById("qr-target");
+    if(!c)return;
+    var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
+    var data=deptStaff.map(function(s){
+      return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTITLE:'+s.title+'\nORG:Belita - '+s.base+'\nTEL:'+s.phone+'\nEMAIL:'+s.email+'\nEND:VCARD';
+    }).join('\n\n');
+    var img=document.createElement('img');
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
+    img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
+    c.innerHTML='<div style="display:flex;justify-content:center;padding:8px"><div style="font-size:10px;color:#4A6361">Chargement...</div></div>';
+    img.onload=function(){c.innerHTML='';c.appendChild(img);};
+    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible</div>';};
+  },100);
+}
+
 function showQR(base,id){
   S.qr=base?{base:base,person:null}:{base:null,person:STAFF.find(function(s){return s.id===id;})};
   S.modal='qr';render();
@@ -338,7 +359,19 @@ function renderDir(){
   var bases=S.fb==="All"?BASES:[S.fb];
   bases.forEach(function(base){
     var bs=fs.filter(function(s){return s.base===base;});if(!bs.length)return;
-    h+='<div class="bh"><div class="bbar" style="background:'+BC[base]+'"></div><span class="btitle">'+base+'</span><span class="bcnt">'+bs.length+'</span><button class="bqr" onclick="showQR(\''+base+'\',null)">QR '+base+'</button></div>';
+    // Get depts present in this base
+    var baseDepts=DEPTS.filter(function(d){return STAFF.some(function(s){return s.base===base&&s.dept===d;});});
+    h+='<div class="bh"><div class="bbar" style="background:'+BC[base]+'"></div><span class="btitle">'+base+'</span><span class="bcnt">'+bs.length+' staff</span><button class="bqr" onclick="showQR(\''+base+'\',null)">QR Managers</button></div>';
+    // Dept QR buttons row
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#F8FAFA;border-radius:6px;border:1px solid #e2e6e5">';
+    h+='<span style="font-size:9px;font-weight:700;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;align-self:center;margin-right:4px">QR par dept :</span>';
+    baseDepts.forEach(function(d){
+      var cnt=STAFF.filter(function(s){return s.base===base&&s.dept===d;}).length;
+      var dc=DC[d]||'#888';
+      h+='<button style="padding:4px 10px;border-radius:4px;font-size:9px;font-weight:600;border:1.5px solid '+dc+';background:white;color:'+dc+';cursor:pointer" onclick="showQRDept(\''+base+'\',\''+d+'\')">';
+      h+=d.split(' ')[0]+' ('+cnt+')</button>';
+    });
+    h+='</div>';
     var byL={};bs.slice().sort(function(a,b){return a.name.replace(/^Dr\.?\s*/i,"").localeCompare(b.name.replace(/^Dr\.?\s*/i,""));}).forEach(function(s){var l=s.name.replace(/^Dr\.?\s*/i,"")[0].toUpperCase();if(!byL[l])byL[l]=[];byL[l].push(s);});
     Object.keys(byL).sort().forEach(function(l){
       h+='<div class="al">'+l+'</div>';
@@ -648,7 +681,11 @@ function renderModal(){
   if(!S.modal)return'';
   if(S.modal==='qr'){
     var title,sub,note;
-    if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Base";sub=total+" staff — QR encode "+cnt+" contacts clés (L1+L2)";note="Scanner pour importer directeurs & managers de "+b+". Total base: "+total+" staff.";}
+    if(S.qr.dept){
+      var b=S.qr.base,d=S.qr.dept;
+      var cnt=STAFF.filter(function(s){return s.base===b&&s.dept===d;}).length;
+      title="QR — "+d;sub=b+" • "+cnt+" staff";note="Scanner pour importer tous les contacts "+d+" de "+b+".";
+    } else if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Managers";sub=cnt+" contacts clés (L1+L2) sur "+total+" staff";note="Scanner pour importer directeurs & managers de "+b+".";}
     else{var p=S.qr.person;title=he(p.name);sub=he(p.title)+" • "+p.base;note="Scanner pour importer le contact.";}
     return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
   }
