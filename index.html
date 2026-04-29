@@ -293,9 +293,10 @@ function showQRDept(base,dept){
     var c=document.getElementById("qr-target");
     if(!c)return;
     var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
+    // Minimal format: name + phone only to keep QR scannable
     var data=deptStaff.map(function(s){
-      return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTITLE:'+s.title+'\nORG:Belita - '+s.base+'\nTEL:'+s.phone+'\nEMAIL:'+s.email+'\nEND:VCARD';
-    }).join('\n\n');
+      return s.name+' | '+s.phone;
+    }).join('\n');
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
     img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
@@ -319,8 +320,8 @@ function showQR(base,id){
       // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
       var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
       data=keyStaff.map(function(s){
-        return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTITLE:'+s.title+'\nORG:Belita - '+s.base+'\nTEL:'+s.phone+'\nEMAIL:'+s.email+'\nEND:VCARD';
-      }).join('\n\n');
+        return s.name+' | '+s.title+'\n'+s.phone;
+      }).join('\n---\n');
     } else {
       data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTITLE:'+p.title+'\nORG:Belita - '+p.base+'\nTEL:'+p.phone+'\nEMAIL:'+p.email+'\nEND:VCARD';
     }
