@@ -191,7 +191,14 @@ async function loadUserProfile(user) {
   if(!sr.error&&sr.data&&sr.data.length>0){
     STAFF=sr.data.map(function(s){return {id:s.id,base:s.base,name:s.name,title:s.title,dept:s.dept,level:s.level,reportsTo:s.reports_to||"",phone:s.phone||"",email:s.email||""};});
   }
-  loadTree();render();
+  loadTree();
+  // Check if came from QR code scan
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('base')&&params.get('dept')){
+    renderContactsPage(params.get('base'),params.get('dept'));
+  } else {
+    render();
+  }
 }
 
 async function init() {
@@ -431,9 +438,10 @@ function showQRDept(base,dept){
     if(!c)return;
     var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
     // Simple text: Name + Phone, one per line
-    var data=dept+' — '+base+'\n'+deptStaff.map(function(s){
-      return s.name+': '+s.phone;
-    }).join('\n');
+    // Plain text format — prefix avoids auto-dial on phones
+    var data='== '+dept+' / '+base+' ==\n\n'+deptStaff.map(function(s){
+      return s.name+'\nTel: '+s.phone.replace(/\+/,'00');
+    }).join('\n\n');
     var img=document.createElement('img');
     img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
     img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
@@ -456,9 +464,8 @@ function showQR(base,id){
       var baseStaff=STAFF.filter(function(s){return s.base===base;});
       // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
       var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
-      data='Managers '+base+'\n'+keyStaff.map(function(s){
-        return s.name+': '+s.phone;
-      }).join('\n');
+      // URL pointing to app managers page — login required
+      data=window.location.origin+'?base='+encodeURIComponent(base)+'&dept=managers';
     } else {
       data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTEL:'+p.phone+'\nEND:VCARD';
     }
