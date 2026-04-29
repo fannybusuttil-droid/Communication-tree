@@ -2,8 +2,6 @@
 <html><head><meta charset="utf-8">
 <title>Belita Communication Tree v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="config.js"></script> 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -101,6 +99,12 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 <div id="app"></div>
 <script>
 // ═══════════════════════════════════════════
+// SUPABASE — REMPLACE CES 2 VALEURS
+// ═══════════════════════════════════════════
+const SUPABASE_URL = "COLLE_TON_URL_ICI";
+const SUPABASE_ANON_KEY = "COLLE_TA_CLÉ_ICI";
+// ═══════════════════════════════════════════
+
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var AUTH = { user: null, org_id: null, role: null };
@@ -290,37 +294,29 @@ function showQR(base,id){
   S.qr=base?{base:base,person:null}:{base:null,person:STAFF.find(function(s){return s.id===id;})};
   S.modal='qr';render();
   setTimeout(function(){
-    var c=document.getElementById("qr-target");if(!c)return;
-    var v=S.qr.base?mkBVC(S.qr.base):mkVC(S.qr.person);
-    
-    // Try qrcode.js first
-    if(typeof QRCode!=="undefined"){
-      var canvas=document.createElement('canvas');
-      c.innerHTML="";
-      c.appendChild(canvas);
-      QRCode.toCanvas(canvas,v,{width:200,margin:2,errorCorrectionLevel:'L'},function(err){
-        if(err){
-          // Fallback: use QR API with shortened data
-          useQRImageAPI(c,v);
-        }
-      });
+    var c=document.getElementById("qr-target");
+    if(!c)return;
+    var p=S.qr.person;
+    // For base QR: encode ALL staff vCards (or key contacts if too many)
+    var data;
+    if(base){
+      var baseStaff=STAFF.filter(function(s){return s.base===base;});
+      // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
+      var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
+      data=keyStaff.map(function(s){
+        return 'BEGIN:VCARD\nVERSION:3.0\nFN:'+s.name+'\nTITLE:'+s.title+'\nORG:Belita - '+s.base+'\nTEL:'+s.phone+'\nEMAIL:'+s.email+'\nEND:VCARD';
+      }).join('\n\n');
     } else {
-      useQRImageAPI(c,v);
+      data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTITLE:'+p.title+'\nORG:Belita - '+p.base+'\nTEL:'+p.phone+'\nEMAIL:'+p.email+'\nEND:VCARD';
     }
+    var img=document.createElement('img');
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
+    img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
+    img.alt='QR Code';
+    c.innerHTML='<div style="display:flex;justify-content:center;padding:8px"><div style="font-size:10px;color:#4A6361">Chargement...</div></div>';
+    img.onload=function(){c.innerHTML='';c.appendChild(img);};
+    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible<br><small>Vérifier connexion internet</small></div>';};
   },100);
-}
-
-function useQRImageAPI(container,data){
-  // Use a simple text for base QR if too long
-  var encoded=encodeURIComponent(data.substring(0,500));
-  var img=document.createElement('img');
-  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encoded;
-  img.style.cssText='width:200px;height:200px;display:block';
-  img.onerror=function(){
-    container.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible</div>';
-  };
-  container.innerHTML="";
-  container.appendChild(img);
 }
 
 function triggerAlert(){
@@ -658,7 +654,7 @@ function renderModal(){
   if(!S.modal)return'';
   if(S.modal==='qr'){
     var title,sub,note;
-    if(S.qr.base){var b=S.qr.base,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b;sub=cnt+" contacts clés (L1+L2)";note="Importer les directeurs & managers de "+b;}
+    if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Base";sub=total+" staff — QR encode "+cnt+" contacts clés (L1+L2)";note="Scanner pour importer directeurs & managers de "+b+". Total base: "+total+" staff.";}
     else{var p=S.qr.person;title=he(p.name);sub=he(p.title)+" • "+p.base;note="Scanner pour importer le contact.";}
     return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
   }
@@ -688,5 +684,3 @@ function render(){
 loadTree();init();
 
 </script></body></html>
-
-
