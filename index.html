@@ -102,7 +102,7 @@ button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
 // ═══════════════════════════════════════════
 // SUPABASE — REMPLACE CES 2 VALEURS
 // ═══════════════════════════════════════════
-const SUPABASE_URL = "https://dsedhkyfduwvxrjsinls.supabase.co";
+const SUPABASE_URL = "Chttps://dsedhkyfduwvxrjsinls.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ZZ9N3iRlowOlUkLG4Nhg3g_XgDPXP8j";
 // ═══════════════════════════════════════════
 
@@ -297,11 +297,35 @@ function showQR(base,id){
   setTimeout(function(){
     var c=document.getElementById("qr-target");if(!c)return;
     var v=S.qr.base?mkBVC(S.qr.base):mkVC(S.qr.person);
-    QRCode.toCanvas(v,{width:180,margin:2,errorCorrectionLevel:'L'},function(err,canvas){
-      if(err){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">Données trop volumineuses.<br><small>'+he(String(err))+'</small></div>';return;}
-      c.innerHTML="";c.appendChild(canvas);
-    });
-  },50);
+    
+    // Try qrcode.js first
+    if(typeof QRCode!=="undefined"){
+      var canvas=document.createElement('canvas');
+      c.innerHTML="";
+      c.appendChild(canvas);
+      QRCode.toCanvas(canvas,v,{width:200,margin:2,errorCorrectionLevel:'L'},function(err){
+        if(err){
+          // Fallback: use QR API with shortened data
+          useQRImageAPI(c,v);
+        }
+      });
+    } else {
+      useQRImageAPI(c,v);
+    }
+  },100);
+}
+
+function useQRImageAPI(container,data){
+  // Use a simple text for base QR if too long
+  var encoded=encodeURIComponent(data.substring(0,500));
+  var img=document.createElement('img');
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encoded;
+  img.style.cssText='width:200px;height:200px;display:block';
+  img.onerror=function(){
+    container.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible</div>';
+  };
+  container.innerHTML="";
+  container.appendChild(img);
 }
 
 function triggerAlert(){
@@ -669,5 +693,5 @@ function render(){
 loadTree();init();
 
 </script></body></html>
-// ═══════════════════════════════════════════════════
+
 
