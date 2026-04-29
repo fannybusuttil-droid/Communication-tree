@@ -260,7 +260,7 @@ const BASES=["Gaza","Jerusalem","Amman"];
 const DEPTS=["Health","Food Distribution","Logistics","Infrastructure","Water & Sanitation","Coordination"];
 const NW=128,NH=50;
 
-var S={tab:"directory",search:"",fb:"All",fd:"All",fl:"All",qr:null,ob:"Gaza",od:"All",cb:"Gaza",alertForm:{type:"",location:"",message:""},mockAlert:null,editMode:false,zoom:1.0,treePositions:{},customLines:{},removedLines:{},selectedNode:null,modal:null,pendingSave:false};
+var S={tab:"directory",search:"",fb:"All",fd:"All",fl:"All",qr:null,ob:"Gaza",od:"All",cb:"Gaza",alertForm:{type:"",location:"",message:""},mockAlert:null,editMode:false,zoom:1.0,orgZoom:1.0,treePositions:{},customLines:{},removedLines:{},selectedNode:null,modal:null,pendingSave:false};
 
 const MOCK_CONF={"GAZ-001":1,"GAZ-002":1,"GAZ-003":1,"GAZ-004":1,"GAZ-006":1,"GAZ-008":1,"GAZ-010":1,"GAZ-011":1,"GAZ-013":1,"GAZ-014":1,"GAZ-020":1,"GAZ-021":1,"GAZ-022":1,"GAZ-024":1,"GAZ-025":1,"GAZ-027":1,"GAZ-028":1,"GAZ-030":1,"GAZ-032":1,"GAZ-036":1,"GAZ-038":1,"GAZ-039":1,"GAZ-040":1,"GAZ-041":1,"GAZ-042":1,"GAZ-047":1,"GAZ-049":1,"GAZ-050":1,"GAZ-051":1,"GAZ-054":1,"GAZ-056":1,"GAZ-059":1,"GAZ-060":1,"GAZ-061":1,"GAZ-063":1,"GAZ-067":1,"GAZ-069":1,"GAZ-070":1,"GAZ-071":1,"GAZ-072":1,"GAZ-073":1,"GAZ-074":1,"GAZ-076":1,"GAZ-078":1,"GAZ-079":1};
 
@@ -419,19 +419,30 @@ async function exportExcel(){
 }
 
 function exportPDF(){
-  var el=document.getElementById('orgchart-export');if(!el){alert('Aller dans Org Chart pour exporter');return;}
+  var el=document.getElementById('orgchart-inner')||document.getElementById('orgchart-export');
+  if(!el){alert('Aller dans Org Chart pour exporter');return;}
+  var deptLabel=S.od==='All'?'Tous départements':S.od;
+  var staffCount=S.od==='All'?STAFF.filter(function(s){return s.base===S.ob;}).length:STAFF.filter(function(s){return s.base===S.ob&&s.dept===S.od;}).length;
   html2canvas(el,{scale:3,useCORS:true,logging:false,backgroundColor:'#F4F7F6'}).then(function(canvas){
     var pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    var hh=9,margin=8,aw=pw-margin*2,ah=ph-margin*2-hh;
+    var hh=12,margin=8,aw=pw-margin*2,ah=ph-margin*2-hh;
     var ratio=Math.min(aw/canvas.width,ah/canvas.height);
     var iw=canvas.width*ratio,ih=canvas.height*ratio;
     var ix=(pw-iw)/2,iy=hh+margin+(ah-ih)/2;
+    // Header bar
     pdf.setFillColor(18,78,73);pdf.rect(0,0,pw,hh,'F');
-    pdf.setFontSize(11);pdf.setFont(undefined,'bold');pdf.setTextColor(255,255,255);
-    pdf.text('Belita NGO — Organigramme '+S.ob,pw/2,5.8,{align:'center'});
-    pdf.setFontSize(7);pdf.setFont(undefined,'normal');
-    pdf.text(new Date().toLocaleDateString('fr-FR'),pw-margin,5.8,{align:'right'});
+    // Logo dot
+    pdf.setFillColor(201,168,76);pdf.circle(8,hh/2,3,'F');
+    // Title
+    pdf.setFontSize(12);pdf.setFont(undefined,'bold');pdf.setTextColor(255,255,255);
+    pdf.text('Belita NGO — '+S.ob+' Base',16,7.5);
+    // Subtitle
+    pdf.setFontSize(8);pdf.setFont(undefined,'normal');pdf.setTextColor(201,168,76);
+    pdf.text(deptLabel+' • '+staffCount+' staff',16,11);
+    // Date
+    pdf.setTextColor(180,200,198);
+    pdf.text(new Date().toLocaleDateString('fr-FR'),pw-margin,7.5,{align:'right'});
     pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',ix,iy,iw,ih);
     pdf.save('Belita_Organigramme_'+S.ob+'.pdf');
   });
@@ -571,7 +582,13 @@ function renderOrg(){
   var bc=BC[S.ob];
   var all=STAFF.filter(function(s){return s.base===S.ob;});
   var bs=S.od==='All'?all:all.filter(function(s){return s.dept===S.od;});
-  var h='<div class="toolbar"><button class="btn-tb primary" onclick="exportPDF()">⬇ Export PDF</button></div>';
+  var h='<div class="toolbar">';
+  h+='<button class="btn-tb primary" onclick="exportPDF()">📄 Export PDF</button>';
+  h+='<div class="zoom-grp" style="margin-left:auto">';
+  h+='<button onclick="S.orgZoom=Math.max(0.3,Math.round((S.orgZoom-0.1)*10)/10);render()">−</button>';
+  h+='<span>'+Math.round((S.orgZoom||1)*100)+'%</span>';
+  h+='<button onclick="S.orgZoom=Math.min(2,Math.round((S.orgZoom+0.1)*10)/10);render()">+</button>';
+  h+='</div></div>';
   var bb=BASES.map(function(b){return '<button class="ob'+(S.ob===b?' on':'')+'" style="'+(S.ob===b?'background:'+BC[b]+';color:white;border-color:'+BC[b]:'')+'" onclick="S.ob=\''+b+'\';S.od=\'All\';render()">'+b+'</button>';}).join('');
   var db='<button class="ob'+(S.od==='All'?' on':'')+'" style="'+(S.od==='All'?'background:#C9A84C;color:#1C2B2A;border-color:#C9A84C':'')+'" onclick="S.od=\'All\';render()">Tous</button>';
   DEPTS.forEach(function(d){var c=all.filter(function(s){return s.dept===d;}).length;if(c)db+='<button class="ob'+(S.od===d?' on':'')+'" style="'+(S.od===d?'background:'+DC[d]+';color:white;border-color:'+DC[d]:'')+'" onclick="S.od=\''+d+'\';render()">'+d.split(' ')[0]+' ('+c+')</button>';});
@@ -649,9 +666,9 @@ function renderOrg(){
   return h
     +'<div style="margin-bottom:10px">'+bb+'</div>'
     +'<div style="margin-bottom:10px">'+db+'</div>'
-    +'<div class="orgbox" id="orgchart-export" style="background:#F4F7F6">'
+    +'<div class="orgbox" id="orgchart-export" style="background:#F4F7F6;overflow:auto"><div id="orgchart-inner" style="transform:scale('+(S.orgZoom||1)+');transform-origin:top left;display:inline-block">'
     +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'+defs+edges+nodes+'</svg>'
-    +'</div>';
+    +'</div></div>';
 }
 
 // ── Comm Tree ─────────────────────────────────────────────────────────────────
