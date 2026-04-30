@@ -1,107 +1,4 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<title>Belita Communication Tree v4.5</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="config.js"></script>
-<script src="form.js"></script>
-<script src="export.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#F2F4F3;font-family:"DM Sans",sans-serif;font-size:13px;user-select:none}
-button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
-.nav{background:#124E49;padding:0 16px;display:flex;align-items:center;gap:10px;height:46px;position:sticky;top:0;z-index:200}
-.brand{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:white;display:flex;align-items:center;gap:7px}
-.brand-tag{font-size:8px;color:#C9A84C;letter-spacing:.14em;text-transform:uppercase}
-.ntab{padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);background:transparent;transition:all .14s}
-.ntab.on{background:#C9A84C;color:#1C2B2A;border-color:#C9A84C}
-.kpi{background:#1A6B65;padding:9px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.kn{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:600}
-.kl{font-size:8px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.10em}
-.ksep{width:1px;height:14px;background:rgba(255,255,255,.15)}
-.main{padding:14px 16px;max-width:1400px;margin:0 auto}
-.toolbar{background:white;border-radius:8px;border:1px solid #e2e6e5;padding:10px 14px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn-tb{padding:6px 12px;border-radius:5px;font-size:11px;font-weight:600;border:1.5px solid #e2e6e5;background:white;color:#4A6361;transition:all .14s;white-space:nowrap}
-.btn-tb:hover{background:#F2F4F3}
-.btn-tb.primary{background:#1A6B65;color:white;border-color:#1A6B65}
-.btn-tb.gold{background:#C9A84C;color:#1C2B2A;border-color:#C9A84C}
-.btn-tb.danger{background:#C0392B;color:white;border-color:#C0392B}
-.btn-tb.active{background:#1E4D8C;color:white;border-color:#1E4D8C}
-.zoom-grp{display:flex;align-items:center;border:1.5px solid #e2e6e5;border-radius:5px;overflow:hidden}
-.zoom-grp button{padding:5px 11px;border:none;background:white;font-size:15px;font-weight:700;color:#4A6361;line-height:1}
-.zoom-grp button:hover{background:#F2F4F3}
-.zoom-grp span{font-size:10px;font-weight:600;color:#1A6B65;min-width:40px;text-align:center;border-left:1px solid #e2e6e5;border-right:1px solid #e2e6e5;padding:5px 2px}
-.filters{background:white;border-radius:8px;border:1px solid #e2e6e5;padding:10px 14px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.filters input,.filters select{padding:5px 10px;border:1.5px solid #e2e6e5;border-radius:5px;font-size:11px;outline:none;color:#2C3E3D}
-.filters input{flex:1;min-width:120px}
-.bh{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:9px 12px;background:white;border-radius:8px;border:1px solid #e2e6e5;flex-wrap:wrap}
-.bbar{width:3px;height:18px;border-radius:2px;flex-shrink:0}
-.btitle{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:#1C2B2A;flex:1}
-.bcnt{font-size:9px;color:#4A6361;background:#F2F4F3;padding:2px 8px;border-radius:20px}
-.bqr{display:flex;align-items:center;gap:5px;padding:5px 12px;background:#124E49;color:white;border:none;border-radius:5px;font-size:10px;font-weight:600}
-.al{font-size:9px;font-weight:700;color:#C9A84C;letter-spacing:.12em;text-transform:uppercase;padding:4px 0 2px;border-bottom:1px solid #eef0ef;margin-bottom:4px;margin-top:8px}
-.sr{display:flex;align-items:center;gap:8px;padding:6px 9px;background:white;border:1px solid #eff1f0;border-radius:6px;margin-bottom:3px;transition:box-shadow .12s;position:relative}
-.sr:hover{box-shadow:0 2px 8px rgba(26,107,101,.08)}
-.sr .rm{width:20px;height:20px;flex-shrink:0;border-radius:50%;background:#FEF5F5;color:#C0392B;border:1px solid #C0392B;font-size:12px;display:flex;align-items:center;justify-content:center;visibility:hidden}
-.sr:hover .rm{visibility:visible}
-.av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;flex-shrink:0}
-.sn{font-weight:500;font-size:12px;color:#1C2B2A;min-width:155px;flex-shrink:0}
-.dd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.st{font-size:10px;color:#4A6361;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sp{font-size:10px;color:#1A6B65;font-weight:500;min-width:120px;flex-shrink:0}
-.lp{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
-.rqr{background:transparent;border:1px solid #e2e6e5;border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:#C9A84C}
-.ob{padding:6px 16px;border-radius:5px;font-size:11px;font-weight:600;border:1.5px solid #e2e6e5;background:white;color:#4A6361;transition:all .14s;margin-right:6px;margin-bottom:6px}
-.ob.on{color:white;border-color:transparent}
-.orgbox{background:white;border-radius:9px;border:1px solid #e2e6e5;padding:14px;overflow-x:auto}
-.mbg{position:fixed;inset:0;background:rgba(18,78,73,.5);display:flex;align-items:center;justify-content:center;z-index:999;padding:14px}
-.mbox{background:#FAFAF8;border-radius:12px;padding:20px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
-.mh2{font-family:"Cormorant Garamond",serif;font-size:19px;font-weight:600;color:#1C2B2A;margin-bottom:2px}
-.msub{font-size:10px;color:#4A6361;margin-bottom:12px}
-.mbtn{width:100%;padding:8px 0;border-radius:5px;font-size:11px;font-weight:600;margin-bottom:6px;border:none;cursor:pointer}
-.qr-container{display:flex;justify-content:center;align-items:center;margin:10px 0;padding:9px;background:white;border:1px solid #e2e6e5;border-radius:6px;min-height:80px}
-/* Comm Tree */
-.ct-section{background:white;border-radius:9px;border:1px solid #e2e6e5;padding:16px;margin-bottom:14px}
-.ct-title{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:#1C2B2A;margin-bottom:2px}
-.ct-subtitle{font-size:10px;color:#4A6361;margin-bottom:10px}
-.tree-wrap{background:#FAFAFA;border-radius:8px;border:1px solid #e2e6e5;overflow:auto;min-height:500px}
-/* Nodes — smaller with colored level stripe */
-.tnode{position:absolute;background:white;border:1px solid #dde2e1;border-radius:6px;width:128px;overflow:visible;box-shadow:0 1px 3px rgba(0,0,0,.07);transition:box-shadow .15s,border-color .15s;cursor:pointer}
-.tnode:hover{box-shadow:0 3px 10px rgba(26,107,101,.15);border-color:#9BBFBC}
-.tnode.selected{outline:2px solid #C9A84C;outline-offset:1px}
-.tnode.linestart{outline:2px solid #C9A84C;outline-offset:1px;background:#FFFBE8}
-.nbody{padding:8px 10px}
-.nname{font-size:10px;font-weight:600;color:#1C2B2A;line-height:1.3;margin-bottom:1px}
-.ntitle{font-size:8px;color:#6A7E7D;line-height:1.3}
-/* Level legend */
-.lvleg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:white;border-radius:7px;border:1px solid #e2e6e5}
-.lvli{display:flex;align-items:center;gap:6px;font-size:9px;color:#4A6361}
-.lvbar{width:22px;height:4px;border-radius:2px}
-/* Hint */
-.hint{background:#EEF4F3;border:1px solid #C9E8E5;border-radius:6px;padding:8px 12px;font-size:10px;color:#1A6B65;margin-bottom:10px}
-/* Alert */
-.form-group{margin-bottom:12px}
-.form-label{font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block}
-.form-input,.form-select,.form-textarea{width:100%;padding:8px 10px;border:1.5px solid #e2e6e5;border-radius:5px;font-size:12px;outline:none}
-.form-textarea{resize:vertical;min-height:70px;font-family:"DM Sans",sans-serif}
-.btn-trigger{width:100%;padding:12px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:5px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.progress-bar{background:#E8F4F3;border-radius:20px;height:22px;margin:8px 0;overflow:hidden;position:relative}
-.progress-fill{background:linear-gradient(90deg,#1A6B65,#2A8F87);height:100%}
-.progress-text{font-size:10px;font-weight:600;color:white;position:absolute;left:10px;line-height:22px;top:0}
-.missing-list{background:#FEF5F5;border-left:3px solid #C0392B;padding:8px 12px;border-radius:0 5px 5px 0;margin-top:8px}
-.missing-item{font-size:10px;color:#4A6361;padding:2px 0}
-.config-box{background:#E8F4F3;border:1px solid #C9E8E5;border-radius:6px;padding:12px;margin-top:10px}
-.config-option{font-size:11px;color:#4A6361;padding:5px 0;border-bottom:1px solid rgba(26,107,101,.1)}
-.config-option:last-child{border-bottom:none}
-.config-label{font-weight:600;color:#1C2B2A}
-</style>
-</head><body>
-<div id="app"></div>
-<script>
-// ═══════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -120,10 +17,10 @@ function renderLogin(msg) {
     +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
     +'<input id="li-em" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
     +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
-    +'<input id="li-pw" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none" onkeydown="if(event.key===\'Enter\')doLogin()"></div>'
+    +'<input id="li-pw" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none" onkeydown="if(event.key===\'Enter\')doLogin()"></div>'
     +'<button onclick="doLogin()" style="width:100%;padding:11px;background:#1A6B65;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Se connecter</button>'
-    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="showSignup()" style="font-size:10px;color:#1A6B65;text-decoration:none">Créer un compte</a></div>'
-    +'<div style="text-align:center;margin-top:16px;font-size:9px;color:#bbb">🔒 Accès sécurisé — Belita NGO</div>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="showSignup()" style="font-size:10px;color:#1A6B65;text-decoration:none">CrÃ©er un compte</a></div>'
+    +'<div style="text-align:center;margin-top:16px;font-size:9px;color:#bbb">ðŸ”’ AccÃ¨s sÃ©curisÃ© â€” Belita NGO</div>'
     +'</div></div>';
 }
 
@@ -132,16 +29,16 @@ function showSignup() {
     '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center;padding:20px">'
     +'<div style="background:#FAFAF8;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
     +'<div style="text-align:center;margin-bottom:24px">'
-    +'<div style="font-family:serif;font-size:22px;font-weight:600;color:#1C2B2A">Créer un compte</div>'
+    +'<div style="font-family:serif;font-size:22px;font-weight:600;color:#1C2B2A">CrÃ©er un compte</div>'
     +'<div style="font-size:10px;color:#4A6361;margin-top:4px">Vous serez administrateur de votre organisation</div></div>'
     +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
     +'<input id="su-em" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
     +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
-    +'<input id="su-pw" type="password" placeholder="Min 6 caractères" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<input id="su-pw" type="password" placeholder="Min 6 caractÃ¨res" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
     +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Organisation</label>'
     +'<input id="su-org" type="text" placeholder="ex: Belita NGO" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
-    +'<button onclick="doSignup()" style="width:100%;padding:11px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Créer mon compte</button>'
-    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="renderLogin()" style="font-size:10px;color:#1A6B65;text-decoration:none">← Retour connexion</a></div>'
+    +'<button onclick="doSignup()" style="width:100%;padding:11px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">CrÃ©er mon compte</button>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="renderLogin()" style="font-size:10px;color:#1A6B65;text-decoration:none">â† Retour connexion</a></div>'
     +'</div></div>';
 }
 
@@ -150,7 +47,7 @@ async function doLogin() {
   var pw=document.getElementById("li-pw").value;
   if(!em||!pw){renderLogin("Remplir email et mot de passe");return;}
   var r=await sb.auth.signInWithPassword({email:em,password:pw});
-  if(r.error){renderLogin("❌ "+r.error.message);return;}
+  if(r.error){renderLogin("âŒ "+r.error.message);return;}
   await loadUserProfile(r.data.user);
 }
 
@@ -164,7 +61,7 @@ async function doSignup() {
   var authR=await sb.auth.signUp({email:em,password:pw});
   if(authR.error){alert("Erreur: "+authR.error.message);return;}
   await sb.from("users").insert({id:authR.data.user.id,email:em,org_id:orgR.data.id,role:"admin"});
-  alert("✅ Compte créé ! Vérifie ton email puis connecte-toi.");
+  alert("âœ… Compte crÃ©Ã© ! VÃ©rifie ton email puis connecte-toi.");
   renderLogin();
 }
 
@@ -180,10 +77,10 @@ async function loadUserProfile(user) {
     document.getElementById("app").innerHTML=
       '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center">'
       +'<div style="background:white;border-radius:12px;padding:30px;max-width:360px;text-align:center">'
-      +'<div style="font-size:28px;margin-bottom:12px">⏳</div>'
-      +'<div style="font-family:serif;font-size:18px;font-weight:600;margin-bottom:8px">Accès en attente</div>'
-      +'<div style="font-size:11px;color:#4A6361;margin-bottom:20px">Un administrateur doit valider votre accès.</div>'
-      +'<button onclick="doLogout()" style="padding:8px 20px;background:#1A6B65;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px">Se déconnecter</button>'
+      +'<div style="font-size:28px;margin-bottom:12px">â³</div>'
+      +'<div style="font-family:serif;font-size:18px;font-weight:600;margin-bottom:8px">AccÃ¨s en attente</div>'
+      +'<div style="font-size:11px;color:#4A6361;margin-bottom:20px">Un administrateur doit valider votre accÃ¨s.</div>'
+      +'<button onclick="doLogout()" style="padding:8px 20px;background:#1A6B65;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px">Se dÃ©connecter</button>'
       +'</div></div>';
     return;
   }
@@ -208,20 +105,20 @@ function renderContactsPage(base,dept){
   var title;
   if(dept==='managers'){
     staff=STAFF.filter(function(s){return s.base===base&&(s.level==='L1'||s.level==='L2');});
-    title='Managers — '+base;
+    title='Managers â€” '+base;
   } else {
     staff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
-    title=dept+' — '+base;
+    title=dept+' â€” '+base;
   }
   var lColors={L1:'#C9A84C',L2:'#1A6B65',L3:'#1E4D8C',L4:'#888'};
   var h='<div style="min-height:100vh;background:#F2F4F3">';
   h+='<div style="background:#124E49;padding:12px 16px;display:flex;align-items:center;gap:10px">';
   h+='<div style="font-family:serif;font-size:18px;font-weight:600;color:white">Belita</div>';
   h+='<div style="font-size:10px;color:#C9A84C;letter-spacing:.1em;text-transform:uppercase;margin-left:8px">'+title+'</div>';
-  h+='<button onclick="history.back()" style="margin-left:auto;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:4px;color:white;font-size:10px;cursor:pointer">← Retour</button>';
+  h+='<button onclick="history.back()" style="margin-left:auto;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:4px;color:white;font-size:10px;cursor:pointer">â† Retour</button>';
   h+='</div>';
   h+='<div style="padding:16px;max-width:600px;margin:0 auto">';
-  h+='<div style="font-size:11px;color:#4A6361;margin-bottom:12px">'+staff.length+' contacts • '+base+'</div>';
+  h+='<div style="font-size:11px;color:#4A6361;margin-bottom:12px">'+staff.length+' contacts â€¢ '+base+'</div>';
   staff.forEach(function(s){
     var lc=lColors[s.level]||'#888';
     var initials=s.name.split(' ').filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');
@@ -232,8 +129,8 @@ function renderContactsPage(base,dept){
     h+='<div style="font-size:10px;color:#4A6361">'+s.title+'</div>';
     h+='<div style="font-size:10px;color:#1A6B65;margin-top:2px">'+s.phone+'</div></div>';
     h+='<div style="display:flex;flex-direction:column;gap:5px">';
-    h+='<a href="tel:'+s.phone+'" style="padding:6px 12px;background:#1A6B65;color:white;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">📞 Appeler</a>';
-    h+='<a href="data:text/vcard,'+vcard+'" download="'+s.name.replace(/\s/g,'_')+'.vcf" style="padding:6px 12px;background:#C9A84C;color:#1C2B2A;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">💾 Enregistrer</a>';
+    h+='<a href="tel:'+s.phone+'" style="padding:6px 12px;background:#1A6B65;color:white;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">ðŸ“ž Appeler</a>';
+    h+='<a href="data:text/vcard,'+vcard+'" download="'+s.name.replace(/\s/g,'_')+'.vcf" style="padding:6px 12px;background:#C9A84C;color:#1C2B2A;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">ðŸ’¾ Enregistrer</a>';
     h+='</div></div>';
   });
   h+='</div></div>';
@@ -323,7 +220,7 @@ async function exportExcel(){
     ];
 
     // Header
-    var hRow=ws.addRow(["ID","Nom complet","Poste","Département","Niveau","Téléphone","Email","Rapporte à"]);
+    var hRow=ws.addRow(["ID","Nom complet","Poste","DÃ©partement","Niveau","TÃ©lÃ©phone","Email","Rapporte Ã "]);
     hRow.height=24;
     hRow.eachCell(function(cell){
       cell.font=fnt("FFFFFF",true,11);
@@ -337,7 +234,7 @@ async function exportExcel(){
       var isKey=s.level==="L1"||s.level==="L2";
       var lc=LEVEL_COLORS[s.level]||"888888";
       var dc=DEPT_COLORS[s.dept]||"888888";
-      var row=ws.addRow([s.id,s.name,s.title,s.dept,s.level,s.phone,s.email,s.reportsTo||"—"]);
+      var row=ws.addRow([s.id,s.name,s.title,s.dept,s.level,s.phone,s.email,s.reportsTo||"â€”"]);
       row.height=20;
 
       row.getCell(1).font=fnt("1A6B65",true,9);
@@ -375,9 +272,9 @@ async function exportExcel(){
   });
 
   // Summary sheet
-  var wsSummary=wb.addWorksheet("Résumé");
+  var wsSummary=wb.addWorksheet("RÃ©sumÃ©");
   wsSummary.columns=[{width:14},{width:13},{width:18},{width:18},{width:16},{width:18}];
-  var sumHRow=wsSummary.addRow(["Base","Total Staff","L1 — Directeurs","L2 — Managers","L3 — Officers","L4 — Field Staff"]);
+  var sumHRow=wsSummary.addRow(["Base","Total Staff","L1 â€” Directeurs","L2 â€” Managers","L3 â€” Officers","L4 â€” Field Staff"]);
   sumHRow.height=26;
   sumHRow.eachCell(function(cell){cell.font=fnt("FFFFFF",true,11);cell.fill=hdr("124E49");cell.alignment=aln("center");});
 
@@ -422,7 +319,7 @@ async function exportExcel(){
 function exportPDF(){
   var el=document.getElementById('orgchart-inner')||document.getElementById('orgchart-export');
   if(!el){alert('Aller dans Org Chart pour exporter');return;}
-  var deptLabel=S.od==='All'?'Tous départements':S.od;
+  var deptLabel=S.od==='All'?'Tous dÃ©partements':S.od;
   var staffCount=S.od==='All'?STAFF.filter(function(s){return s.base===S.ob;}).length:STAFF.filter(function(s){return s.base===S.ob&&s.dept===S.od;}).length;
   html2canvas(el,{scale:3,useCORS:true,logging:false,backgroundColor:'#F4F7F6'}).then(function(canvas){
     var pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
@@ -437,10 +334,10 @@ function exportPDF(){
     pdf.setFillColor(201,168,76);pdf.circle(8,hh/2,3,'F');
     // Title
     pdf.setFontSize(12);pdf.setFont(undefined,'bold');pdf.setTextColor(255,255,255);
-    pdf.text('Belita NGO — '+S.ob+' Base',16,7.5);
+    pdf.text('Belita NGO â€” '+S.ob+' Base',16,7.5);
     // Subtitle
     pdf.setFontSize(8);pdf.setFont(undefined,'normal');pdf.setTextColor(201,168,76);
-    pdf.text(deptLabel+' • '+staffCount+' staff',16,11);
+    pdf.text(deptLabel+' â€¢ '+staffCount+' staff',16,11);
     // Date
     pdf.setTextColor(180,200,198);
     pdf.text(new Date().toLocaleDateString('fr-FR'),pw-margin,7.5,{align:'right'});
@@ -492,7 +389,7 @@ function showQR(base,id){
       var baseStaff=STAFF.filter(function(s){return s.base===base;});
       // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
       var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
-      // URL pointing to app managers page — login required
+      // URL pointing to app managers page â€” login required
       data=window.location.origin+'?base='+encodeURIComponent(base)+'&dept=managers';
     } else {
       data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTEL:'+p.phone+'\nEND:VCARD';
@@ -503,7 +400,7 @@ function showQR(base,id){
     img.alt='QR Code';
     c.innerHTML='<div style="display:flex;justify-content:center;padding:8px"><div style="font-size:10px;color:#4A6361">Chargement...</div></div>';
     img.onload=function(){c.innerHTML='';c.appendChild(img);};
-    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible<br><small>Vérifier connexion internet</small></div>';};
+    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible<br><small>VÃ©rifier connexion internet</small></div>';};
   },100);
 }
 
@@ -511,7 +408,7 @@ function triggerAlert(){
   if(!S.alertForm.type||!S.alertForm.location){alert("Remplir Type et Localisation");return;}
   var now=new Date(),t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   S.mockAlert={id:'ALT-'+now.getFullYear()+'-'+Math.floor(Math.random()*999).toString().padStart(3,'0'),time:t,type:S.alertForm.type,location:S.alertForm.location};
-  alert('DEMO — Alerte envoyée\nID: '+S.mockAlert.id+'\nHeure: '+t+'\nType: '+S.alertForm.type);render();
+  alert('DEMO â€” Alerte envoyÃ©e\nID: '+S.mockAlert.id+'\nHeure: '+t+'\nType: '+S.alertForm.type);render();
 }
 
 function renderNav(){
@@ -519,7 +416,7 @@ function renderNav(){
   var tb=tabs.map(function(t){return '<button class="ntab'+(S.tab===t?" on":"")+'" onclick="S.tab=\''+t+'\';render()">'+labels[t]+'</button>';}).join("");
   var kH=BASES.map(function(b){var n=STAFF.filter(function(s){return s.base===b;}).length;return '<div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:rgba(255,255,255,.9)">'+n+'</span><span class="kl">'+b+'</span></div>';}).join("");
   return '<div class="nav"><div class="brand"><div style="width:20px;height:20px;border-radius:4px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:10px">&#x2B21;</div>Belita<span class="brand-tag">Comm Tree</span></div><div style="display:flex;gap:4px;margin-left:auto">'+tb+'</div></div>'
-    +'<div class="kpi"><div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:#C9A84C">'+STAFF.length+'</span><span class="kl">Total</span></div><div class="ksep"></div>'+kH+'<span style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.35)">v4.5</span><button onclick="doLogout()" style="padding:3px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:4px;color:rgba(255,255,255,.65);font-size:9px;cursor:pointer;margin-left:8px">Déconnexion</button></div>';
+    +'<div class="kpi"><div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:#C9A84C">'+STAFF.length+'</span><span class="kl">Total</span></div><div class="ksep"></div>'+kH+'<span style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.35)">v4.5</span><button onclick="doLogout()" style="padding:3px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:4px;color:rgba(255,255,255,.65);font-size:9px;cursor:pointer;margin-left:8px">DÃ©connexion</button></div>';
 }
 
 function renderDir(){
@@ -528,7 +425,7 @@ function renderDir(){
   var dO=["All"].concat(DEPTS).map(function(d){return '<option value="'+d+'"'+(S.fd===d?" selected":"")+">"+(d==="All"?"Tous depts":d.split(" ")[0])+"</option>";}).join("");
   var lO=["All","L1","L2","L3","L4"].map(function(l){return '<option value="'+l+'"'+(S.fl===l?" selected":"")+">"+(l==="All"?"Tous niveaux":l)+"</option>";}).join("");
   var h='<div class="toolbar"><button class="btn-tb gold" onclick="showAddModal()">+ Ajouter</button><button class="btn-tb primary" onclick="exportExcel()">Export Excel</button><span style="font-size:10px;color:#4A6361;margin-left:auto">'+fs.length+' staff</span></div>';
-  h+='<div class="filters"><input placeholder="Rechercher…" value="'+he(S.search)+'" oninput="S.search=this.value;render()"><select onchange="S.fb=this.value;render()">'+bO+'</select><select onchange="S.fd=this.value;render()">'+dO+'</select><select onchange="S.fl=this.value;render()">'+lO+'</select></div>';
+  h+='<div class="filters"><input placeholder="Rechercherâ€¦" value="'+he(S.search)+'" oninput="S.search=this.value;render()"><select onchange="S.fb=this.value;render()">'+bO+'</select><select onchange="S.fd=this.value;render()">'+dO+'</select><select onchange="S.fl=this.value;render()">'+lO+'</select></div>';
   var bases=S.fb==="All"?BASES:[S.fb];
   bases.forEach(function(base){
     var bs=fs.filter(function(s){return s.base===base;});if(!bs.length)return;
@@ -554,7 +451,7 @@ function renderDir(){
           +'<span class="st">'+he(p.title)+'</span><span class="sp">'+he(p.phone)+'</span>'
           +'<span class="lp" style="'+lvS(p.level)+'">'+p.level+'</span>'
           +'<button class="rqr" onclick="showQR(null,\''+p.id+'\')">&#x229E;</button>'
-          +'<button class="rm" onclick="rmStaff(\''+p.id+'\')">×</button></div>';
+          +'<button class="rm" onclick="rmStaff(\''+p.id+'\')">Ã—</button></div>';
       });
     });
   });
@@ -566,9 +463,9 @@ function renderOrg(){
   var all=STAFF.filter(function(s){return s.base===S.ob;});
   var bs=S.od==='All'?all:all.filter(function(s){return s.dept===S.od;});
   var h='<div class="toolbar">';
-  h+='<button class="btn-tb primary" onclick="exportPDF()">📄 Export PDF</button>';
+  h+='<button class="btn-tb primary" onclick="exportPDF()">ðŸ“„ Export PDF</button>';
   h+='<div class="zoom-grp" style="margin-left:auto">';
-  h+='<button onclick="S.orgZoom=Math.max(0.3,Math.round((S.orgZoom-0.1)*10)/10);render()">−</button>';
+  h+='<button onclick="S.orgZoom=Math.max(0.3,Math.round((S.orgZoom-0.1)*10)/10);render()">âˆ’</button>';
   h+='<span>'+Math.round((S.orgZoom||1)*100)+'%</span>';
   h+='<button onclick="S.orgZoom=Math.min(2,Math.round((S.orgZoom+0.1)*10)/10);render()">+</button>';
   h+='</div></div>';
@@ -587,7 +484,7 @@ function renderOrg(){
   var defs='<defs><filter id="csh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#1C2B2A" flood-opacity="0.1"/></filter>';
   bs.forEach(function(s){var p=pos[s.name];if(!p||s.level==='L1')return;defs+='<clipPath id="cp'+s.id.replace(/-/g,'')+'"><rect x="'+p.x+'" y="'+p.y+'" width="'+NW2+'" height="'+NH2+'" rx="9"/></clipPath>';});
   defs+='</defs>';
-  // Connectors — orthogonal H-bar
+  // Connectors â€” orthogonal H-bar
   var edges='';
   bs.forEach(function(par){
     var pp=pos[par.name];if(!pp)return;
@@ -609,9 +506,9 @@ function renderOrg(){
     var sc=isL2?bc:dc;
     var avCX=px+23,avCY=py+34,txtX=px+49;
     var abbr=ini(s.name);
-    var nm=s.name.length>21?s.name.slice(0,20)+'…':s.name;
-    var ti=s.title.length>27?s.title.slice(0,26)+'…':s.title;
-    var dept=s.dept.length>22?s.dept.slice(0,21)+'…':s.dept;
+    var nm=s.name.length>21?s.name.slice(0,20)+'â€¦':s.name;
+    var ti=s.title.length>27?s.title.slice(0,26)+'â€¦':s.title;
+    var dept=s.dept.length>22?s.dept.slice(0,21)+'â€¦':s.dept;
     nodes+='<g style="cursor:pointer" onclick="showQR(null,\''+s.id+'\')" filter="url(#csh)">';
     if(isL1){
       // Solid base-color card with subtle top sheen
@@ -654,59 +551,59 @@ function renderOrg(){
     +'</div></div>';
 }
 
-// ── Comm Tree ─────────────────────────────────────────────────────────────────
+// â”€â”€ Comm Tree â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderCT(){
   var base=S.cb;
-  var bb=BASES.map(function(b){return '<button class="ob'+(S.cb===b?" on":"")+'" style="'+(S.cb===b?"background:"+BC[b]+";color:white;border-color:"+BC[b]:"")+'" onclick="S.cb=\''+b+'\';S.lineMode=false;S.lineStart=null;render()">'+b+'</button>';}).join("");
+  var bb=BASES.map(function(b){return '<button class="ob'+(S.cb===b?" on":"")+'" style="'+(S.cb===b?"background:"+BC[b]+";color:white;border-color:"+BC[b]:"")+'" onclick="S.cb=\''+b+'\';render()">'+b+'</button>';}).join("");
   var h='<div style="margin-bottom:10px">'+bb+'</div>';
 
 
   // Toolbar
   var hasUnsaved=S.pendingSave||(S.customLines[S.cb]||[]).some(function(l){return !l.saved;});
   h+='<div class="toolbar">';
-  h+='<button class="btn-tb '+(S.editMode?'active':'primary')+'" onclick="toggleEdit()">'+(S.editMode?'✓ Quitter édition':'✏️ Éditer')+'</button>';
-  if(hasUnsaved) h+='<button class="btn-tb gold" onclick="saveCT()">💾 Sauvegarder</button>';
-  h+='<button class="btn-tb" onclick="resetLayout()">↻ Reset</button>';
-  h+='<div class="zoom-grp"><button onclick="doZoom(-1)">−</button><span>'+Math.round(S.zoom*100)+'%</span><button onclick="doZoom(1)">+</button></div>';
+  h+='<button class="btn-tb '+(S.editMode?'active':'primary')+'" onclick="toggleEdit()">'+(S.editMode?'âœ“ Quitter Ã©dition':'âœï¸ Ã‰diter')+'</button>';
+  if(hasUnsaved) h+='<button class="btn-tb gold" onclick="saveCT()">ðŸ’¾ Sauvegarder</button>';
+  h+='<button class="btn-tb" onclick="resetLayout()">â†» Reset</button>';
+  h+='<div class="zoom-grp"><button onclick="doZoom(-1)">âˆ’</button><span>'+Math.round(S.zoom*100)+'%</span><button onclick="doZoom(1)">+</button></div>';
   h+='</div>';
   if(S.editMode){
     var staffList=STAFF.filter(function(s){return s.base===S.cb;}).slice().sort(function(a,b){return a.name.localeCompare(b.name);});
-    var opts=staffList.map(function(s){return '<option value="'+s.id+'">'+he(s.name)+' — '+he(s.title)+'</option>';}).join('');
+    var opts=staffList.map(function(s){return '<option value="'+s.id+'">'+he(s.name)+' â€” '+he(s.title)+'</option>';}).join('');
     h+='<div style="background:#EEF4F3;border:1px solid #C9E8E5;border-radius:6px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
     h+='<span style="font-size:10px;font-weight:700;color:#1A6B65;white-space:nowrap">AJOUTER UN LIEN :</span>';
-    h+='<select id="conn-from" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">De…</option>'+opts+'</select>';
-    h+='<span style="font-size:13px;color:#1A6B65;font-weight:700">→</span>';
-    h+='<select id="conn-to" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">Vers…</option>'+opts+'</select>';
+    h+='<select id="conn-from" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">Deâ€¦</option>'+opts+'</select>';
+    h+='<span style="font-size:13px;color:#1A6B65;font-weight:700">â†’</span>';
+    h+='<select id="conn-to" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">Versâ€¦</option>'+opts+'</select>';
     h+='<button class="btn-tb primary" style="white-space:nowrap" onclick="addConn()">+ Ajouter</button>';
     h+='</div>';
   }
 
-  h+='<div class="ct-section"><div class="ct-title">Communication Tree — '+base+'</div><div class="ct-subtitle">'+STAFF.filter(function(s){return s.base===base;}).length+' staff</div>';
+  h+='<div class="ct-section"><div class="ct-title">Communication Tree â€” '+base+'</div><div class="ct-subtitle">'+STAFF.filter(function(s){return s.base===base;}).length+' staff</div>';
   h+='<div class="tree-wrap"><div id="tree-inner" style="transform:scale('+S.zoom+');transform-origin:top left;display:inline-block">';
   h+=renderTreeVisual(base);
   h+='</div></div></div>';
 
   // Alert
-  h+='<div class="ct-section"><div class="ct-title">🚨 Alerte Sécurité</div><div class="ct-subtitle">Envoyer à tous les staff de '+base+' (Demo)</div>';
-  h+='<div class="form-group"><label class="form-label">Type d\'incident</label><select class="form-select" onchange="S.alertForm.type=this.value"><option value="">Sélectionner...</option><option>Shelling/Rocket</option><option>Armed Intrusion</option><option>Kidnapping</option><option>Demonstration</option><option>Other</option></select></div>';
+  h+='<div class="ct-section"><div class="ct-title">ðŸš¨ Alerte SÃ©curitÃ©</div><div class="ct-subtitle">Envoyer Ã  tous les staff de '+base+' (Demo)</div>';
+  h+='<div class="form-group"><label class="form-label">Type d\'incident</label><select class="form-select" onchange="S.alertForm.type=this.value"><option value="">SÃ©lectionner...</option><option>Shelling/Rocket</option><option>Armed Intrusion</option><option>Kidnapping</option><option>Demonstration</option><option>Other</option></select></div>';
   h+='<div class="form-group"><label class="form-label">Localisation</label><input type="text" class="form-input" placeholder="ex: 500m east of compound" value="'+he(S.alertForm.location)+'" oninput="S.alertForm.location=this.value"></div>';
-  h+='<button class="btn-trigger" onclick="triggerAlert()">📤 Envoyer via Telegram</button></div>';
+  h+='<button class="btn-trigger" onclick="triggerAlert()">ðŸ“¤ Envoyer via Telegram</button></div>';
 
   if(S.mockAlert){
     var total=STAFF.filter(function(s){return s.base===base;}).length;
     var pfx=base.slice(0,3).toUpperCase();
     var conf=Object.keys(MOCK_CONF).filter(function(id){return id.startsWith(pfx);}).length;
     var pct=Math.round(conf/total*100);
-    h+='<div class="ct-section"><div class="ct-title">Confirmations — '+S.mockAlert.id+'</div>';
+    h+='<div class="ct-section"><div class="ct-title">Confirmations â€” '+S.mockAlert.id+'</div>';
     h+='<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div><div class="progress-text">'+conf+'/'+total+' ('+pct+'%)</div></div>';
     var miss=STAFF.filter(function(s){return s.base===base&&!MOCK_CONF[s.id];});
-    if(miss.length) h+='<div class="missing-list">'+miss.slice(0,6).map(function(p){return '<div class="missing-item">• '+he(p.name)+'</div>';}).join('')+(miss.length>6?'<div class="missing-item">... et '+(miss.length-6)+' autres</div>':'')+'</div>';
+    if(miss.length) h+='<div class="missing-list">'+miss.slice(0,6).map(function(p){return '<div class="missing-item">â€¢ '+he(p.name)+'</div>';}).join('')+(miss.length>6?'<div class="missing-item">... et '+(miss.length-6)+' autres</div>':'')+'</div>';
     h+='</div>';
   }
   return h;
 }
 
-// ── Tree visual ───────────────────────────────────────────────────────────────
+// â”€â”€ Tree visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderTreeVisual(base){
   var staff=STAFF.filter(function(s){return s.base===base;});
   if(!staff.length)return '<div style="padding:40px;text-align:center;color:#4A6361">Aucun staff</div>';
@@ -721,7 +618,7 @@ function renderTreeVisual(base){
   var maxW=600,maxH=400;
   staff.forEach(function(s){var p=pos[s.id];if(!p)return;if(p.x+NW+40>maxW)maxW=p.x+NW+40;if(p.y+NH+40>maxH)maxH=p.y+NH+40;});
 
-  // Build SVG — lines first, interactive circles on top
+  // Build SVG â€” lines first, interactive circles on top
   var svgLines='', svgBtns='';
   // Auto hierarchy lines
   staff.forEach(function(par){
@@ -739,7 +636,7 @@ function renderTreeVisual(base){
       if(S.editMode){
         var by=Math.round((midY+cy)/2);
         svgBtns+='<circle cx="'+cx+'" cy="'+by+'" r="7" fill="white" stroke="#C0392B" stroke-width="1.3" style="cursor:pointer;pointer-events:all" onclick="delLine(\''+base+'\',\''+par.id+'\',\''+c.id+'\')"/>';
-        svgBtns+='<text x="'+cx+'" y="'+(by+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">×</text>';
+        svgBtns+='<text x="'+cx+'" y="'+(by+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">Ã—</text>';
       }
     });
   });
@@ -763,7 +660,7 @@ function renderTreeVisual(base){
     if(S.editMode){
       var mx=Math.round((x1+x2)/2),my=Math.round((y1+y2)/2);
       svgBtns+='<circle cx="'+mx+'" cy="'+my+'" r="7" fill="white" stroke="#C0392B" stroke-width="1.3" style="cursor:pointer;pointer-events:all" onclick="delCustom(\''+base+'\','+idx+')"/>';
-      svgBtns+='<text x="'+mx+'" y="'+(my+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">×</text>';
+      svgBtns+='<text x="'+mx+'" y="'+(my+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">Ã—</text>';
     }
   });
 
@@ -802,13 +699,13 @@ function toggleEdit(){
 function addConn(){
   var fromId=document.getElementById('conn-from').value;
   var toId=document.getElementById('conn-to').value;
-  if(!fromId||!toId||fromId===toId){alert('Sélectionner deux nœuds différents');return;}
+  if(!fromId||!toId||fromId===toId){alert('SÃ©lectionner deux nÅ“uds diffÃ©rents');return;}
   if(!S.customLines[S.cb])S.customLines[S.cb]=[];
   S.customLines[S.cb].push({fromId:fromId,toId:toId,saved:false});
   S.pendingSave=true;
   render();
 }
-function resetLayout(){if(!confirm('Réinitialiser la mise en page ?'))return;delete S.treePositions[S.cb];saveTree();render();}
+function resetLayout(){if(!confirm('RÃ©initialiser la mise en page ?'))return;delete S.treePositions[S.cb];saveTree();render();}
 
 function delLine(base,parentId,childId){
   if(!S.removedLines[base])S.removedLines[base]=[];
@@ -816,7 +713,7 @@ function delLine(base,parentId,childId){
 }
 function delCustom(base,idx){if(S.customLines[base])S.customLines[base].splice(idx,1);render();}
 
-// Node drag/click — named functions so removeEventListener works cleanly
+// Node drag/click â€” named functions so removeEventListener works cleanly
 var _d={on:false,moved:false,id:null,mx:0,my:0,ox:0,oy:0};
 
 function onTreeMove(ev){
@@ -842,7 +739,7 @@ function onTreeUp(){
   _d={on:false,moved:false,id:null,mx:0,my:0,ox:0,oy:0};
 }
 
-// ── Node drag ─────────────────────────────────────────────────────────────────
+// â”€â”€ Node drag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function attachTreeListeners(){
   document.querySelectorAll('.tnode').forEach(function(el){
     el.addEventListener('mousedown',function(e){
@@ -855,7 +752,18 @@ function attachTreeListeners(){
   });
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function render(){
+  var h='<div class="main">';
+  if(S.tab==='directory') h+=renderDir();
+  else if(S.tab==='orgchart') h+=renderOrg();
+  else if(S.tab==='commtree') h+=renderCT();
+  h+='</div>';
+  document.getElementById('app').innerHTML=renderNav()+h+renderModal();
+  if(S.tab==='commtree') attachTreeListeners();
+}
+
+// â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderModal(){
   if(!S.modal)return'';
   if(S.modal==='qr'){
@@ -863,16 +771,15 @@ function renderModal(){
     if(S.qr.dept){
       var b=S.qr.base,d=S.qr.dept;
       var cnt=STAFF.filter(function(s){return s.base===b&&s.dept===d;}).length;
-      title="QR — "+d;sub=b+" • "+cnt+" staff";note="Scanner pour importer tous les contacts "+d+" de "+b+".";
-    } else if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Managers";sub=cnt+" contacts clés (L1+L2) sur "+total+" staff";note="Scanner pour importer directeurs & managers de "+b+".";}
+      title="QR â€” "+d;sub=b+" â€¢ "+cnt+" staff";note="Scanner pour importer tous les contacts "+d+" de "+b+".";
+    } else if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR â€” "+b+" Managers";sub=cnt+" contacts clÃ©s (L1+L2) sur "+total+" staff";note="Scanner pour importer directeurs & managers de "+b+".";}
     else{var p=S.qr.person;title=he(p.name);sub=he(p.phone);note="Scanner pour importer le contact.";}
     return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
   }
   if(S.modal==='addstaff'){
     return renderAddStaffModal();
   }
-    if(S.tab==='commtree') attachTreeListeners();
+  return '';
 }
 loadTree();init();
 
-</script></body></html>
