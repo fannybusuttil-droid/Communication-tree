@@ -606,17 +606,19 @@ async function addStaff() {
   }
   STAFF.push(ns);
 
-  // Update direct subordinates reportsTo
-  newSubs.forEach(function(sid){
+  // Update direct subordinates reportsTo - wait for all Supabase updates
+  var subUpdates = newSubs.map(async function(sid){
     var sub=STAFF.find(function(s){return s.id===sid;});
-    if(sub){
-      sub.reportsTo=ns.name;
-      if(AUTH.org_id) sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);
+    if(!sub) return;
+    sub.reportsTo = ns.name;
+    if(AUTH.org_id){
+      await sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);
     }
   });
+  if(subUpdates.length) await Promise.all(subUpdates);
 
-  // Note: sub-subordinates follow automatically since their reportsTo
-  // still points to their direct manager who is now under ns
+  // Sub-subordinates follow automatically - their reportsTo still points
+  // to their direct manager who is now under ns
 
   saveStaff();
 
@@ -631,6 +633,19 @@ async function addStaff() {
   S.tab = 'orgchart';
   S.ob = ns.base;
   S.od = 'All';
+
+  // Reload fresh data from Supabase to reflect all changes
+  if(AUTH.org_id) {
+    var fresh = await sb.from('staff').select('*').eq('org_id',AUTH.org_id).order('base').order('name');
+    if(!fresh.error && fresh.data && fresh.data.length > 0) {
+      STAFF = fresh.data.map(function(s){
+        return {id:s.id,base:s.base,name:s.name,title:s.title,dept:s.dept,
+          level:s.level,reportsTo:s.reports_to||'',phone:s.phone||'',email:s.email||''};
+      });
+      saveStaff();
+    }
+  }
+
   render();
   alert('✅ ' + ns.name + ' ajouté dans ' + ns.base + ' !');
 }
