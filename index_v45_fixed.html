@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Belita Communication Tree v4.5</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="form.js"></script>
+<script src="export.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F2F4F3;font-family:"DM Sans",sans-serif;font-size:13px;user-select:none}
+button,input,select,textarea{font-family:"DM Sans",sans-serif;cursor:pointer}
+.nav{background:#124E49;padding:0 16px;display:flex;align-items:center;gap:10px;height:46px;position:sticky;top:0;z-index:200}
+.brand{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:white;display:flex;align-items:center;gap:7px}
+.brand-tag{font-size:8px;color:#C9A84C;letter-spacing:.14em;text-transform:uppercase}
+.ntab{padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);background:transparent;transition:all .14s}
+.ntab.on{background:#C9A84C;color:#1C2B2A;border-color:#C9A84C}
+.kpi{background:#1A6B65;padding:9px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.kn{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:600}
+.kl{font-size:8px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.10em}
+.ksep{width:1px;height:14px;background:rgba(255,255,255,.15)}
+.main{padding:14px 16px;max-width:1400px;margin:0 auto}
+.toolbar{background:white;border-radius:8px;border:1px solid #e2e6e5;padding:10px 14px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn-tb{padding:6px 12px;border-radius:5px;font-size:11px;font-weight:600;border:1.5px solid #e2e6e5;background:white;color:#4A6361;transition:all .14s;white-space:nowrap}
+.btn-tb:hover{background:#F2F4F3}
+.btn-tb.primary{background:#1A6B65;color:white;border-color:#1A6B65}
+.btn-tb.gold{background:#C9A84C;color:#1C2B2A;border-color:#C9A84C}
+.btn-tb.danger{background:#C0392B;color:white;border-color:#C0392B}
+.btn-tb.active{background:#1E4D8C;color:white;border-color:#1E4D8C}
+.zoom-grp{display:flex;align-items:center;border:1.5px solid #e2e6e5;border-radius:5px;overflow:hidden}
+.zoom-grp button{padding:5px 11px;border:none;background:white;font-size:15px;font-weight:700;color:#4A6361;line-height:1}
+.zoom-grp button:hover{background:#F2F4F3}
+.zoom-grp span{font-size:10px;font-weight:600;color:#1A6B65;min-width:40px;text-align:center;border-left:1px solid #e2e6e5;border-right:1px solid #e2e6e5;padding:5px 2px}
+.filters{background:white;border-radius:8px;border:1px solid #e2e6e5;padding:10px 14px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{padding:5px 10px;border:1.5px solid #e2e6e5;border-radius:5px;font-size:11px;outline:none;color:#2C3E3D}
+.filters input{flex:1;min-width:120px}
+.bh{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:9px 12px;background:white;border-radius:8px;border:1px solid #e2e6e5;flex-wrap:wrap}
+.bbar{width:3px;height:18px;border-radius:2px;flex-shrink:0}
+.btitle{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:#1C2B2A;flex:1}
+.bcnt{font-size:9px;color:#4A6361;background:#F2F4F3;padding:2px 8px;border-radius:20px}
+.bqr{display:flex;align-items:center;gap:5px;padding:5px 12px;background:#124E49;color:white;border:none;border-radius:5px;font-size:10px;font-weight:600}
+.al{font-size:9px;font-weight:700;color:#C9A84C;letter-spacing:.12em;text-transform:uppercase;padding:4px 0 2px;border-bottom:1px solid #eef0ef;margin-bottom:4px;margin-top:8px}
+.sr{display:flex;align-items:center;gap:8px;padding:6px 9px;background:white;border:1px solid #eff1f0;border-radius:6px;margin-bottom:3px;transition:box-shadow .12s;position:relative}
+.sr:hover{box-shadow:0 2px 8px rgba(26,107,101,.08)}
+.sr .rm{width:20px;height:20px;flex-shrink:0;border-radius:50%;background:#FEF5F5;color:#C0392B;border:1px solid #C0392B;font-size:12px;display:flex;align-items:center;justify-content:center;visibility:hidden}
+.sr:hover .rm{visibility:visible}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;flex-shrink:0}
+.sn{font-weight:500;font-size:12px;color:#1C2B2A;min-width:155px;flex-shrink:0}
+.dd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.st{font-size:10px;color:#4A6361;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp{font-size:10px;color:#1A6B65;font-weight:500;min-width:120px;flex-shrink:0}
+.lp{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.rqr{background:transparent;border:1px solid #e2e6e5;border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:#C9A84C}
+.ob{padding:6px 16px;border-radius:5px;font-size:11px;font-weight:600;border:1.5px solid #e2e6e5;background:white;color:#4A6361;transition:all .14s;margin-right:6px;margin-bottom:6px}
+.ob.on{color:white;border-color:transparent}
+.orgbox{background:white;border-radius:9px;border:1px solid #e2e6e5;padding:14px;overflow-x:auto}
+.mbg{position:fixed;inset:0;background:rgba(18,78,73,.5);display:flex;align-items:center;justify-content:center;z-index:999;padding:14px}
+.mbox{background:#FAFAF8;border-radius:12px;padding:20px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.mh2{font-family:"Cormorant Garamond",serif;font-size:19px;font-weight:600;color:#1C2B2A;margin-bottom:2px}
+.msub{font-size:10px;color:#4A6361;margin-bottom:12px}
+.mbtn{width:100%;padding:8px 0;border-radius:5px;font-size:11px;font-weight:600;margin-bottom:6px;border:none;cursor:pointer}
+.qr-container{display:flex;justify-content:center;align-items:center;margin:10px 0;padding:9px;background:white;border:1px solid #e2e6e5;border-radius:6px;min-height:80px}
+/* Comm Tree */
+.ct-section{background:white;border-radius:9px;border:1px solid #e2e6e5;padding:16px;margin-bottom:14px}
+.ct-title{font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:600;color:#1C2B2A;margin-bottom:2px}
+.ct-subtitle{font-size:10px;color:#4A6361;margin-bottom:10px}
+.tree-wrap{background:#FAFAFA;border-radius:8px;border:1px solid #e2e6e5;overflow:auto;min-height:500px}
+/* Nodes — smaller with colored level stripe */
+.tnode{position:absolute;background:white;border:1px solid #dde2e1;border-radius:6px;width:128px;overflow:visible;box-shadow:0 1px 3px rgba(0,0,0,.07);transition:box-shadow .15s,border-color .15s;cursor:pointer}
+.tnode:hover{box-shadow:0 3px 10px rgba(26,107,101,.15);border-color:#9BBFBC}
+.tnode.selected{outline:2px solid #C9A84C;outline-offset:1px}
+.tnode.linestart{outline:2px solid #C9A84C;outline-offset:1px;background:#FFFBE8}
+.nbody{padding:8px 10px}
+.nname{font-size:10px;font-weight:600;color:#1C2B2A;line-height:1.3;margin-bottom:1px}
+.ntitle{font-size:8px;color:#6A7E7D;line-height:1.3}
+/* Level legend */
+.lvleg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:white;border-radius:7px;border:1px solid #e2e6e5}
+.lvli{display:flex;align-items:center;gap:6px;font-size:9px;color:#4A6361}
+.lvbar{width:22px;height:4px;border-radius:2px}
+/* Hint */
+.hint{background:#EEF4F3;border:1px solid #C9E8E5;border-radius:6px;padding:8px 12px;font-size:10px;color:#1A6B65;margin-bottom:10px}
+/* Alert */
+.form-group{margin-bottom:12px}
+.form-label{font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 10px;border:1.5px solid #e2e6e5;border-radius:5px;font-size:12px;outline:none}
+.form-textarea{resize:vertical;min-height:70px;font-family:"DM Sans",sans-serif}
+.btn-trigger{width:100%;padding:12px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:5px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.progress-bar{background:#E8F4F3;border-radius:20px;height:22px;margin:8px 0;overflow:hidden;position:relative}
+.progress-fill{background:linear-gradient(90deg,#1A6B65,#2A8F87);height:100%}
+.progress-text{font-size:10px;font-weight:600;color:white;position:absolute;left:10px;line-height:22px;top:0}
+.missing-list{background:#FEF5F5;border-left:3px solid #C0392B;padding:8px 12px;border-radius:0 5px 5px 0;margin-top:8px}
+.missing-item{font-size:10px;color:#4A6361;padding:2px 0}
+.config-box{background:#E8F4F3;border:1px solid #C9E8E5;border-radius:6px;padding:12px;margin-top:10px}
+.config-option{font-size:11px;color:#4A6361;padding:5px 0;border-bottom:1px solid rgba(26,107,101,.1)}
+.config-option:last-child{border-bottom:none}
+.config-label{font-weight:600;color:#1C2B2A}
+</style>
+</head><body>
+<div id="app"></div>
+<script>
+// ═══════════════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var AUTH = { user: null, org_id: null, role: null };
+
+function renderLogin(msg) {
+  document.getElementById("app").innerHTML =
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center;padding:20px">'
+    +'<div style="background:#FAFAF8;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="text-align:center;margin-bottom:28px">'
+    +'<div style="width:44px;height:44px;border-radius:10px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px">&#x2B21;</div>'
+    +'<div style="font-family:serif;font-size:26px;font-weight:600;color:#1C2B2A">Belita</div>'
+    +'<div style="font-size:9px;color:#C9A84C;letter-spacing:.18em;text-transform:uppercase">Communication Tree v4.5</div>'
+    +'</div>'
+    +(msg ? '<div style="background:#FEF5F5;border:1px solid #C0392B;border-radius:6px;padding:8px 12px;font-size:11px;color:#C0392B;margin-bottom:14px;text-align:center">'+msg+'</div>' : '')
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
+    +'<input id="li-em" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
+    +'<input id="li-pw" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none" onkeydown="if(event.key===\'Enter\')doLogin()"></div>'
+    +'<button onclick="doLogin()" style="width:100%;padding:11px;background:#1A6B65;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Se connecter</button>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="showSignup()" style="font-size:10px;color:#1A6B65;text-decoration:none">Créer un compte</a></div>'
+    +'<div style="text-align:center;margin-top:16px;font-size:9px;color:#bbb">🔒 Accès sécurisé — Belita NGO</div>'
+    +'</div></div>';
+}
+
+function showSignup() {
+  document.getElementById("app").innerHTML =
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center;padding:20px">'
+    +'<div style="background:#FAFAF8;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+    +'<div style="text-align:center;margin-bottom:24px">'
+    +'<div style="font-family:serif;font-size:22px;font-weight:600;color:#1C2B2A">Créer un compte</div>'
+    +'<div style="font-size:10px;color:#4A6361;margin-top:4px">Vous serez administrateur de votre organisation</div></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>'
+    +'<input id="su-em" type="email" placeholder="vous@belita.org" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Mot de passe</label>'
+    +'<input id="su-pw" type="password" placeholder="Min 6 caractères" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:10px;font-weight:600;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Organisation</label>'
+    +'<input id="su-org" type="text" placeholder="ex: Belita NGO" style="width:100%;padding:9px 12px;border:1.5px solid #e2e6e5;border-radius:6px;font-size:12px;outline:none"></div>'
+    +'<button onclick="doSignup()" style="width:100%;padding:11px;background:#C9A84C;color:#1C2B2A;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Créer mon compte</button>'
+    +'<div style="text-align:center;margin-top:14px"><a href="#" onclick="renderLogin()" style="font-size:10px;color:#1A6B65;text-decoration:none">← Retour connexion</a></div>'
+    +'</div></div>';
+}
+
+async function doLogin() {
+  var em=document.getElementById("li-em").value.trim();
+  var pw=document.getElementById("li-pw").value;
+  if(!em||!pw){renderLogin("Remplir email et mot de passe");return;}
+  var r=await sb.auth.signInWithPassword({email:em,password:pw});
+  if(r.error){renderLogin("❌ "+r.error.message);return;}
+  await loadUserProfile(r.data.user);
+}
+
+async function doSignup() {
+  var em=document.getElementById("su-em").value.trim();
+  var pw=document.getElementById("su-pw").value;
+  var org=document.getElementById("su-org").value.trim();
+  if(!em||!pw||!org){alert("Remplir tous les champs");return;}
+  var orgR=await sb.from("organizations").insert({name:org}).select().single();
+  if(orgR.error){alert("Erreur organisation: "+orgR.error.message);return;}
+  var authR=await sb.auth.signUp({email:em,password:pw});
+  if(authR.error){alert("Erreur: "+authR.error.message);return;}
+  await sb.from("users").insert({id:authR.data.user.id,email:em,org_id:orgR.data.id,role:"admin"});
+  alert("✅ Compte créé ! Vérifie ton email puis connecte-toi.");
+  renderLogin();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  AUTH={user:null,org_id:null,role:null};
+  renderLogin();
+}
+
+async function loadUserProfile(user) {
+  var r=await sb.from("users").select("org_id,role").eq("id",user.id).single();
+  if(r.error||!r.data){
+    document.getElementById("app").innerHTML=
+      '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center">'
+      +'<div style="background:white;border-radius:12px;padding:30px;max-width:360px;text-align:center">'
+      +'<div style="font-size:28px;margin-bottom:12px">⏳</div>'
+      +'<div style="font-family:serif;font-size:18px;font-weight:600;margin-bottom:8px">Accès en attente</div>'
+      +'<div style="font-size:11px;color:#4A6361;margin-bottom:20px">Un administrateur doit valider votre accès.</div>'
+      +'<button onclick="doLogout()" style="padding:8px 20px;background:#1A6B65;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px">Se déconnecter</button>'
+      +'</div></div>';
+    return;
+  }
+  AUTH={user:user,org_id:r.data.org_id,role:r.data.role};
+  var sr=await sb.from("staff").select("*").eq("org_id",AUTH.org_id).order("base").order("name");
+  if(!sr.error&&sr.data&&sr.data.length>0){
+    STAFF=sr.data.map(function(s){return {id:s.id,base:s.base,name:s.name,title:s.title,dept:s.dept,level:s.level,reportsTo:s.reports_to||"",phone:s.phone||"",email:s.email||""};});
+  }
+  loadTree();
+  // Check if came from QR code scan
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('base')&&params.get('dept')){
+    renderContactsPage(params.get('base'),params.get('dept'));
+  } else {
+    render();
+  }
+}
+
+
+function renderContactsPage(base,dept){
+  var staff;
+  var title;
+  if(dept==='managers'){
+    staff=STAFF.filter(function(s){return s.base===base&&(s.level==='L1'||s.level==='L2');});
+    title='Managers — '+base;
+  } else {
+    staff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
+    title=dept+' — '+base;
+  }
+  var lColors={L1:'#C9A84C',L2:'#1A6B65',L3:'#1E4D8C',L4:'#888'};
+  var h='<div style="min-height:100vh;background:#F2F4F3">';
+  h+='<div style="background:#124E49;padding:12px 16px;display:flex;align-items:center;gap:10px">';
+  h+='<div style="font-family:serif;font-size:18px;font-weight:600;color:white">Belita</div>';
+  h+='<div style="font-size:10px;color:#C9A84C;letter-spacing:.1em;text-transform:uppercase;margin-left:8px">'+title+'</div>';
+  h+='<button onclick="history.back()" style="margin-left:auto;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.3);border-radius:4px;color:white;font-size:10px;cursor:pointer">← Retour</button>';
+  h+='</div>';
+  h+='<div style="padding:16px;max-width:600px;margin:0 auto">';
+  h+='<div style="font-size:11px;color:#4A6361;margin-bottom:12px">'+staff.length+' contacts • '+base+'</div>';
+  staff.forEach(function(s){
+    var lc=lColors[s.level]||'#888';
+    var initials=s.name.split(' ').filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');
+    var vcard='BEGIN:VCARD%0AVERSION:3.0%0AFN:'+encodeURIComponent(s.name)+'%0ATEL:'+encodeURIComponent(s.phone)+'%0AEND:VCARD';
+    h+='<div style="background:white;border-radius:8px;border:1px solid #e2e6e5;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+    h+='<div style="width:36px;height:36px;border-radius:50%;background:'+lc+';display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px;flex-shrink:0">'+initials+'</div>';
+    h+='<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#1C2B2A">'+s.name+'</div>';
+    h+='<div style="font-size:10px;color:#4A6361">'+s.title+'</div>';
+    h+='<div style="font-size:10px;color:#1A6B65;margin-top:2px">'+s.phone+'</div></div>';
+    h+='<div style="display:flex;flex-direction:column;gap:5px">';
+    h+='<a href="tel:'+s.phone+'" style="padding:6px 12px;background:#1A6B65;color:white;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">📞 Appeler</a>';
+    h+='<a href="data:text/vcard,'+vcard+'" download="'+s.name.replace(/\s/g,'_')+'.vcf" style="padding:6px 12px;background:#C9A84C;color:#1C2B2A;border-radius:5px;font-size:10px;font-weight:600;text-decoration:none;text-align:center">💾 Enregistrer</a>';
+    h+='</div></div>';
+  });
+  h+='</div></div>';
+  document.getElementById("app").innerHTML=h;
+}
+
+async function init() {
+  document.getElementById("app").innerHTML=
+    '<div style="min-height:100vh;background:#124E49;display:flex;align-items:center;justify-content:center">'
+    +'<div style="text-align:center;color:white">'
+    +'<div style="font-family:serif;font-size:26px;margin-bottom:8px">Belita</div>'
+    +'<div style="font-size:10px;color:#C9A84C;letter-spacing:.14em">CHARGEMENT...</div>'
+    +'</div></div>';
+  var r=await sb.auth.getSession();
+  if(r.data&&r.data.session){await loadUserProfile(r.data.session.user);}
+  else{renderLogin();}
+}
+
+var STAFF=[{"id":"GAZ-001","base":"Gaza","name":"Dr. Layla Al-Masri","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+972 59 400 1001","email":"layla.almasri@belita.org"},{"id":"GAZ-002","base":"Gaza","name":"Mahmoud Barakat","title":"Deputy Director","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1002","email":"mahmoud.barakat@belita.org"},{"id":"GAZ-003","base":"Gaza","name":"Amal Shehada","title":"Health Programme Manager","dept":"Health","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1003","email":"amal.shehada@belita.org"},{"id":"GAZ-004","base":"Gaza","name":"Dr. Yusuf Khalid","title":"Medical Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1004","email":"yusuf.khalid@belita.org"},{"id":"GAZ-005","base":"Gaza","name":"Rana Hamdan","title":"Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1005","email":"rana.hamdan@belita.org"},{"id":"GAZ-006","base":"Gaza","name":"Tariq Mansour","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1006","email":"tariq.mansour@belita.org"},{"id":"GAZ-007","base":"Gaza","name":"Dina Ayyad","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1007","email":"dina.ayyad@belita.org"},{"id":"GAZ-008","base":"Gaza","name":"Faris Othman","title":"Logistics Manager","dept":"Logistics","reportsTo":"Mahmoud Barakat","level":"L2","phone":"+972 59 400 1008","email":"faris.othman@belita.org"},{"id":"GAZ-009","base":"Gaza","name":"Hiba Saqqa","title":"Logistics Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1009","email":"hiba.saqqa@belita.org"},{"id":"GAZ-010","base":"Gaza","name":"Walid Nassar","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Mahmoud Barakat","level":"L2","phone":"+972 59 400 1010","email":"walid.nassar@belita.org"},{"id":"GAZ-011","base":"Gaza","name":"Lina Badr","title":"WASH Manager","dept":"Water & Sanitation","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1011","email":"lina.badr@belita.org"},{"id":"GAZ-012","base":"Gaza","name":"Samir Ghazi","title":"WASH Field Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1012","email":"samir.ghazi@belita.org"},{"id":"GAZ-013","base":"Gaza","name":"Dr. Nour Al-Qattan","title":"Senior Medical Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1013","email":"nour.alqattan@belita.org"},{"id":"GAZ-014","base":"Gaza","name":"Reem Salama","title":"Psychosocial Support Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1014","email":"reem.salama@belita.org"},{"id":"GAZ-015","base":"Gaza","name":"Bilal Zureiq","title":"Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1015","email":"bilal.zureiq@belita.org"},{"id":"GAZ-016","base":"Gaza","name":"Siham Abu Khaled","title":"Midwife","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1016","email":"siham.abukh@belita.org"},{"id":"GAZ-017","base":"Gaza","name":"Omar Salim","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1017","email":"omar.salim@belita.org"},{"id":"GAZ-018","base":"Gaza","name":"Khadija Nasrallah","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1018","email":"khadija.nasrallah@belita.org"},{"id":"GAZ-019","base":"Gaza","name":"Wissam Barhoum","title":"Lab Technician","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1019","email":"wissam.barhoum@belita.org"},{"id":"GAZ-020","base":"Gaza","name":"Inas Tamimi","title":"Pharmacist","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L3","phone":"+972 59 400 1020","email":"inas.tamimi@belita.org"},{"id":"GAZ-021","base":"Gaza","name":"Ramzi Hamdouna","title":"Environmental Health Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1021","email":"ramzi.hamdouna@belita.org"},{"id":"GAZ-022","base":"Gaza","name":"Dr. Fatima Sarraj","title":"Paediatrician","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1022","email":"fatima.sarraj@belita.org"},{"id":"GAZ-023","base":"Gaza","name":"Haitham Joudeh","title":"Medical Driver","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1023","email":"haitham.joudeh@belita.org"},{"id":"GAZ-024","base":"Gaza","name":"Mais Abu Louz","title":"Nutrition Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1024","email":"mais.abulouz@belita.org"},{"id":"GAZ-025","base":"Gaza","name":"Tariq Asad","title":"Health Data Officer","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1025","email":"tariq.asad@belita.org"},{"id":"GAZ-026","base":"Gaza","name":"Rula Shawish","title":"Infection Control Nurse","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L4","phone":"+972 59 400 1026","email":"rula.shawish@belita.org"},{"id":"GAZ-027","base":"Gaza","name":"Ahmad Dardouna","title":"Mobile Clinic Team Leader","dept":"Health","reportsTo":"Dr. Yusuf Khalid","level":"L3","phone":"+972 59 400 1027","email":"ahmad.dardouna@belita.org"},{"id":"GAZ-028","base":"Gaza","name":"Lana Qishawi","title":"Physiotherapist","dept":"Health","reportsTo":"Amal Shehada","level":"L3","phone":"+972 59 400 1028","email":"lana.qishawi@belita.org"},{"id":"GAZ-029","base":"Gaza","name":"Nasser Barakat","title":"Food Distribution TL","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L3","phone":"+972 59 400 1029","email":"nasser.barakat@belita.org"},{"id":"GAZ-030","base":"Gaza","name":"Hana Safi","title":"Distribution Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1030","email":"hana.safi@belita.org"},{"id":"GAZ-031","base":"Gaza","name":"Suleiman Khalaf","title":"Warehouse Assistant","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1031","email":"suleiman.khalaf@belita.org"},{"id":"GAZ-032","base":"Gaza","name":"Mira Odeh","title":"Beneficiary Reg. Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1032","email":"mira.odeh@belita.org"},{"id":"GAZ-033","base":"Gaza","name":"Ziad Al-Zein","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1033","email":"ziad.alzein@belita.org"},{"id":"GAZ-034","base":"Gaza","name":"Rouba Hasan","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1034","email":"rouba.hasan@belita.org"},{"id":"GAZ-035","base":"Gaza","name":"Marwan Musleh","title":"Supply Chain Assistant","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1035","email":"marwan.musleh@belita.org"},{"id":"GAZ-036","base":"Gaza","name":"Yara Qassem","title":"M&E Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1036","email":"yara.qassem@belita.org"},{"id":"GAZ-037","base":"Gaza","name":"Fouad Barghouth","title":"Kitchen Supervisor","dept":"Food Distribution","reportsTo":"Dina Ayyad","level":"L4","phone":"+972 59 400 1037","email":"fouad.barghouth@belita.org"},{"id":"GAZ-038","base":"Gaza","name":"Asma Srour","title":"CVA Officer","dept":"Food Distribution","reportsTo":"Tariq Mansour","level":"L3","phone":"+972 59 400 1038","email":"asma.srour@belita.org"},{"id":"GAZ-039","base":"Gaza","name":"Bassam Arafat","title":"Senior Logistics Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1039","email":"bassam.arafat@belita.org"},{"id":"GAZ-040","base":"Gaza","name":"Dalal Masoud","title":"Procurement Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1040","email":"dalal.masoud@belita.org"},{"id":"GAZ-041","base":"Gaza","name":"Ramadan Nassar","title":"Fleet Manager","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1041","email":"ramadan.nassar@belita.org"},{"id":"GAZ-042","base":"Gaza","name":"Maha Zaqout","title":"Warehouse Manager","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1042","email":"maha.zaqout@belita.org"},{"id":"GAZ-043","base":"Gaza","name":"Ihab Salah","title":"Driver","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1043","email":"ihab.salah@belita.org"},{"id":"GAZ-044","base":"Gaza","name":"Tamer Jouda","title":"Driver","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1044","email":"tamer.jouda@belita.org"},{"id":"GAZ-045","base":"Gaza","name":"Khalil Matar","title":"Fleet Technician","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1045","email":"khalil.matar@belita.org"},{"id":"GAZ-046","base":"Gaza","name":"Yusra Mohsen","title":"Asset Officer","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1046","email":"yusra.mohsen@belita.org"},{"id":"GAZ-047","base":"Gaza","name":"Ismail Abed","title":"Customs Officer","dept":"Logistics","reportsTo":"Faris Othman","level":"L3","phone":"+972 59 400 1047","email":"ismail.abed@belita.org"},{"id":"GAZ-048","base":"Gaza","name":"Sana Baraka","title":"Logistics Clerk","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1048","email":"sana.baraka@belita.org"},{"id":"GAZ-049","base":"Gaza","name":"Saeed Abu Ghali","title":"Senior Civil Engineer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1049","email":"saeed.abughali@belita.org"},{"id":"GAZ-050","base":"Gaza","name":"Nadine Kahlout","title":"Architect","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1050","email":"nadine.kahlout@belita.org"},{"id":"GAZ-051","base":"Gaza","name":"Iyad Issa","title":"Electrical Engineer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1051","email":"iyad.issa@belita.org"},{"id":"GAZ-052","base":"Gaza","name":"Manal Hamad","title":"Construction Supervisor","dept":"Infrastructure","reportsTo":"Saeed Abu Ghali","level":"L4","phone":"+972 59 400 1052","email":"manal.hamad@belita.org"},{"id":"GAZ-053","base":"Gaza","name":"Nader Dawoud","title":"Construction Supervisor","dept":"Infrastructure","reportsTo":"Saeed Abu Ghali","level":"L4","phone":"+972 59 400 1053","email":"nader.dawoud@belita.org"},{"id":"GAZ-054","base":"Gaza","name":"Ola Shurrab","title":"Site Assessment Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1054","email":"ola.shurrab@belita.org"},{"id":"GAZ-055","base":"Gaza","name":"Raed Najjar","title":"MEP Technician","dept":"Infrastructure","reportsTo":"Iyad Issa","level":"L4","phone":"+972 59 400 1055","email":"raed.najjar@belita.org"},{"id":"GAZ-056","base":"Gaza","name":"Salwa Dabbour","title":"M&E Infra Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1056","email":"salwa.dabbour@belita.org"},{"id":"GAZ-057","base":"Gaza","name":"Fares Abu Salim","title":"Labourer Supervisor","dept":"Infrastructure","reportsTo":"Manal Hamad","level":"L4","phone":"+972 59 400 1057","email":"fares.abusalim@belita.org"},{"id":"GAZ-058","base":"Gaza","name":"Joumana Saqer","title":"Community Liaison","dept":"Infrastructure","reportsTo":"Nadine Kahlout","level":"L4","phone":"+972 59 400 1058","email":"joumana.saqer@belita.org"},{"id":"GAZ-059","base":"Gaza","name":"Muhannad Helles","title":"NFI Distribution Officer","dept":"Infrastructure","reportsTo":"Walid Nassar","level":"L3","phone":"+972 59 400 1059","email":"muhannad.helles@belita.org"},{"id":"GAZ-060","base":"Gaza","name":"Sami Kafarna","title":"Senior WASH Engineer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1060","email":"sami.kafarna@belita.org"},{"id":"GAZ-061","base":"Gaza","name":"Randa Abu Salha","title":"WASH Programme Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1061","email":"randa.abusalha@belita.org"},{"id":"GAZ-062","base":"Gaza","name":"Issam Saloul","title":"Water Quality Technician","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L4","phone":"+972 59 400 1062","email":"issam.saloul@belita.org"},{"id":"GAZ-063","base":"Gaza","name":"Dina Hamdan","title":"Hygiene Promotion Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1063","email":"dina.hamdan@belita.org"},{"id":"GAZ-064","base":"Gaza","name":"Amr Badawi","title":"Sanitation Field Worker","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L4","phone":"+972 59 400 1064","email":"amr.badawi@belita.org"},{"id":"GAZ-065","base":"Gaza","name":"Heba Ashour","title":"WASH Community Mobiliser","dept":"Water & Sanitation","reportsTo":"Dina Hamdan","level":"L4","phone":"+972 59 400 1065","email":"heba.ashour@belita.org"},{"id":"GAZ-066","base":"Gaza","name":"Khaled Jarbou","title":"Water Technician","dept":"Water & Sanitation","reportsTo":"Sami Kafarna","level":"L4","phone":"+972 59 400 1066","email":"khaled.jarbou@belita.org"},{"id":"GAZ-067","base":"Gaza","name":"Mervat Hassouna","title":"WASH Data Officer","dept":"Water & Sanitation","reportsTo":"Lina Badr","level":"L3","phone":"+972 59 400 1067","email":"mervat.hassouna@belita.org"},{"id":"GAZ-068","base":"Gaza","name":"Sherif Najim","title":"Desalination Technician","dept":"Water & Sanitation","reportsTo":"Sami Kafarna","level":"L4","phone":"+972 59 400 1068","email":"sherif.najim@belita.org"},{"id":"GAZ-069","base":"Gaza","name":"Farah Qdeih","title":"Solid Waste Officer","dept":"Water & Sanitation","reportsTo":"Samir Ghazi","level":"L3","phone":"+972 59 400 1069","email":"farah.qdeih@belita.org"},{"id":"GAZ-070","base":"Gaza","name":"Adnan Salameh","title":"Security Focal Point","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1070","email":"adnan.salameh@belita.org"},{"id":"GAZ-071","base":"Gaza","name":"Rima Khalil","title":"HR Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1071","email":"rima.khalil@belita.org"},{"id":"GAZ-072","base":"Gaza","name":"Fadi Qasim","title":"Finance Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1072","email":"fadi.qasim@belita.org"},{"id":"GAZ-073","base":"Gaza","name":"Nadia Masri","title":"MEAL Manager","dept":"Coordination","reportsTo":"Dr. Layla Al-Masri","level":"L2","phone":"+972 59 400 1073","email":"nadia.masri@belita.org"},{"id":"GAZ-074","base":"Gaza","name":"Samer Haddad","title":"Communications Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1074","email":"samer.haddad@belita.org"},{"id":"GAZ-075","base":"Gaza","name":"Layla Nimr","title":"Admin Assistant","dept":"Coordination","reportsTo":"Rima Khalil","level":"L4","phone":"+972 59 400 1075","email":"layla.nimr@belita.org"},{"id":"GAZ-076","base":"Gaza","name":"Karim Barakat","title":"IT Officer","dept":"Coordination","reportsTo":"Mahmoud Barakat","level":"L3","phone":"+972 59 400 1076","email":"karim.barakat@belita.org"},{"id":"GAZ-077","base":"Gaza","name":"Dina Salama","title":"Driver / Admin","dept":"Coordination","reportsTo":"Rima Khalil","level":"L4","phone":"+972 59 400 1077","email":"dina.salama@belita.org"},{"id":"GAZ-078","base":"Gaza","name":"Yousef Srour","title":"Community Liaison Officer","dept":"Coordination","reportsTo":"Nadia Masri","level":"L3","phone":"+972 59 400 1078","email":"yousef.srour@belita.org"},{"id":"GAZ-079","base":"Gaza","name":"Hala Barghouth","title":"Donor Reporting Officer","dept":"Coordination","reportsTo":"Nadia Masri","level":"L3","phone":"+972 59 400 1079","email":"hala.barghouth@belita.org"},{"id":"GAZ-080","base":"Gaza","name":"Nour Mansour","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1080","email":"nour.mansour@belita.org"},{"id":"GAZ-081","base":"Gaza","name":"Sami Odeh","title":"Distribution Field Worker","dept":"Food Distribution","reportsTo":"Nasser Barakat","level":"L4","phone":"+972 59 400 1081","email":"sami.odeh@belita.org"},{"id":"GAZ-082","base":"Gaza","name":"Leen Baraka","title":"Nutrition Field Worker","dept":"Health","reportsTo":"Mais Abu Louz","level":"L4","phone":"+972 59 400 1082","email":"leen.baraka@belita.org"},{"id":"GAZ-083","base":"Gaza","name":"Mazen Najjar","title":"Nutrition Field Worker","dept":"Health","reportsTo":"Mais Abu Louz","level":"L4","phone":"+972 59 400 1083","email":"mazen.najjar@belita.org"},{"id":"GAZ-084","base":"Gaza","name":"Sana Qishawi","title":"MHPSS Field Worker","dept":"Health","reportsTo":"Reem Salama","level":"L4","phone":"+972 59 400 1084","email":"sana.qishawi@belita.org"},{"id":"GAZ-085","base":"Gaza","name":"Tariq Zureiq","title":"MHPSS Field Worker","dept":"Health","reportsTo":"Reem Salama","level":"L4","phone":"+972 59 400 1085","email":"tariq.zureiq@belita.org"},{"id":"GAZ-086","base":"Gaza","name":"Ghada Salameh","title":"Physiotherapy Assistant","dept":"Health","reportsTo":"Lana Qishawi","level":"L4","phone":"+972 59 400 1086","email":"ghada.salameh@belita.org"},{"id":"GAZ-087","base":"Gaza","name":"Bilal Kafarna","title":"Driver Mobile Clinic","dept":"Health","reportsTo":"Ahmad Dardouna","level":"L4","phone":"+972 59 400 1087","email":"bilal.kafarna@belita.org"},{"id":"GAZ-088","base":"Gaza","name":"Rana Saqqa","title":"Community Health Worker","dept":"Health","reportsTo":"Rana Hamdan","level":"L4","phone":"+972 59 400 1088","email":"rana.saqqa@belita.org"},{"id":"GAZ-089","base":"Gaza","name":"Faris Joudeh","title":"Warehouse Technician","dept":"Logistics","reportsTo":"Maha Zaqout","level":"L4","phone":"+972 59 400 1089","email":"faris.joudeh@belita.org"},{"id":"GAZ-090","base":"Gaza","name":"Amal Nassar","title":"Driver Logistics","dept":"Logistics","reportsTo":"Ramadan Nassar","level":"L4","phone":"+972 59 400 1090","email":"amal.nassar@belita.org"},{"id":"JRS-001","base":"Jerusalem","name":"Nadia Bishara","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+972 2 500 2001","email":"nadia.bishara@belita.org"},{"id":"JRS-002","base":"Jerusalem","name":"Elias Khoury","title":"Liaison Officer","dept":"Coordination","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2002","email":"elias.khoury@belita.org"},{"id":"JRS-003","base":"Jerusalem","name":"Dr. Mariam Haddad","title":"Health Programme Manager","dept":"Health","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2003","email":"mariam.haddad@belita.org"},{"id":"JRS-004","base":"Jerusalem","name":"Samer Awad","title":"Medical Officer","dept":"Health","reportsTo":"Dr. Mariam Haddad","level":"L3","phone":"+972 2 500 2004","email":"samer.awad@belita.org"},{"id":"JRS-005","base":"Jerusalem","name":"Rula Sayegh","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2005","email":"rula.sayegh@belita.org"},{"id":"JRS-006","base":"Jerusalem","name":"Bassem Qasim","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Rula Sayegh","level":"L3","phone":"+972 2 500 2006","email":"bassem.qasim@belita.org"},{"id":"JRS-007","base":"Jerusalem","name":"Dara Mansouri","title":"Logistics Manager","dept":"Logistics","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2007","email":"dara.mansouri@belita.org"},{"id":"JRS-008","base":"Jerusalem","name":"Kamal Nimer","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Nadia Bishara","level":"L2","phone":"+972 2 500 2008","email":"kamal.nimer@belita.org"},{"id":"JRS-009","base":"Jerusalem","name":"Yara Halabi","title":"WASH Officer","dept":"Water & Sanitation","reportsTo":"Kamal Nimer","level":"L3","phone":"+972 2 500 2009","email":"yara.halabi@belita.org"},{"id":"AMM-001","base":"Amman","name":"Rami Saleh","title":"Base Director","dept":"Coordination","reportsTo":"HQ (Beirut)","level":"L1","phone":"+962 7 900 3001","email":"rami.saleh@belita.org"},{"id":"AMM-002","base":"Amman","name":"Soraya Nasser","title":"Deputy Director","dept":"Coordination","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3002","email":"soraya.nasser@belita.org"},{"id":"AMM-003","base":"Amman","name":"Dr. Jamal Hatem","title":"Health Programme Manager","dept":"Health","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3003","email":"jamal.hatem@belita.org"},{"id":"AMM-004","base":"Amman","name":"Hana Rifai","title":"Medical Officer","dept":"Health","reportsTo":"Dr. Jamal Hatem","level":"L3","phone":"+962 7 900 3004","email":"hana.rifai@belita.org"},{"id":"AMM-005","base":"Amman","name":"Ali Farouq","title":"Food Distribution Manager","dept":"Food Distribution","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3005","email":"ali.farouq@belita.org"},{"id":"AMM-006","base":"Amman","name":"Mona Tawil","title":"Food Distribution Officer","dept":"Food Distribution","reportsTo":"Ali Farouq","level":"L3","phone":"+962 7 900 3006","email":"mona.tawil@belita.org"},{"id":"AMM-007","base":"Amman","name":"Ibrahim Qaddoura","title":"Logistics Manager","dept":"Logistics","reportsTo":"Soraya Nasser","level":"L2","phone":"+962 7 900 3007","email":"ibrahim.qaddoura@belita.org"},{"id":"AMM-008","base":"Amman","name":"Nour Al-Ahmad","title":"Logistics Officer","dept":"Logistics","reportsTo":"Ibrahim Qaddoura","level":"L3","phone":"+962 7 900 3008","email":"nour.alahmad@belita.org"},{"id":"AMM-009","base":"Amman","name":"Leen Shukri","title":"Infrastructure Manager","dept":"Infrastructure","reportsTo":"Soraya Nasser","level":"L2","phone":"+962 7 900 3009","email":"leen.shukri@belita.org"},{"id":"AMM-010","base":"Amman","name":"Fadi Barghout","title":"WASH Manager","dept":"Water & Sanitation","reportsTo":"Rami Saleh","level":"L2","phone":"+962 7 900 3010","email":"fadi.barghout@belita.org"},{"id":"AMM-011","base":"Amman","name":"Ghada Rahhal","title":"WASH Field Officer","dept":"Water & Sanitation","reportsTo":"Fadi Barghout","level":"L3","phone":"+962 7 900 3011","email":"ghada.rahhal@belita.org"}];
+
+const BC={Gaza:"#1A6B65",Jerusalem:"#1E4D8C",Amman:"#5C3A8C"};
+const DC={"Health":"#C0392B","Food Distribution":"#D4891A","Logistics":"#2471A3","Infrastructure":"#7D6608","Water & Sanitation":"#117A65","Coordination":"#6C3483"};
+const LC={L1:"#C9A84C",L2:"#1A6B65",L3:"#1E4D8C",L4:"#888888"};
+const BASES=["Gaza","Jerusalem","Amman"];
+const DEPTS=["Health","Food Distribution","Logistics","Infrastructure","Water & Sanitation","Coordination"];
+const NW=128,NH=50;
+
+var S={tab:"directory",search:"",fb:"All",fd:"All",fl:"All",qr:null,ob:"Gaza",od:"All",cb:"Gaza",alertForm:{type:"",location:"",message:""},mockAlert:null,editMode:false,zoom:1.0,orgZoom:1.0,treePositions:{},customLines:{},removedLines:{},selectedNode:null,modal:null,pendingSave:false,newSubordinates:[]};
+
+const MOCK_CONF={"GAZ-001":1,"GAZ-002":1,"GAZ-003":1,"GAZ-004":1,"GAZ-006":1,"GAZ-008":1,"GAZ-010":1,"GAZ-011":1,"GAZ-013":1,"GAZ-014":1,"GAZ-020":1,"GAZ-021":1,"GAZ-022":1,"GAZ-024":1,"GAZ-025":1,"GAZ-027":1,"GAZ-028":1,"GAZ-030":1,"GAZ-032":1,"GAZ-036":1,"GAZ-038":1,"GAZ-039":1,"GAZ-040":1,"GAZ-041":1,"GAZ-042":1,"GAZ-047":1,"GAZ-049":1,"GAZ-050":1,"GAZ-051":1,"GAZ-054":1,"GAZ-056":1,"GAZ-059":1,"GAZ-060":1,"GAZ-061":1,"GAZ-063":1,"GAZ-067":1,"GAZ-069":1,"GAZ-070":1,"GAZ-071":1,"GAZ-072":1,"GAZ-073":1,"GAZ-074":1,"GAZ-076":1,"GAZ-078":1,"GAZ-079":1};
+
+function ini(n){return n.split(" ").filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join("");}
+function he(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function lvS(l){return l==="L1"?"background:#C9A84C33;color:#7A5A00":l==="L2"?"background:#E8F4F3;color:#124E49":l==="L3"?"background:#E8F0FB;color:#1E4D8C":"background:#F2F4F3;color:#888";}
+function mkVC(p){return "BEGIN:VCARD\nVERSION:3.0\nFN:"+p.name+"\nTITLE:"+p.title+"\nORG:Belita - "+p.base+"\nTEL;TYPE=WORK:"+p.phone+"\nEMAIL:"+p.email+"\nNOTE:"+p.dept+" | "+p.level+"\nEND:VCARD";}
+function mkBVC(b){return STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).sort(function(a,x){return a.name.localeCompare(x.name);}).map(mkVC).join("\n\n");}
+function filt(){return STAFF.filter(function(s){if(S.fb!=="All"&&s.base!==S.fb)return false;if(S.fd!=="All"&&s.dept!==S.fd)return false;if(S.fl!=="All"&&s.level!==S.fl)return false;if(S.search){var q=S.search.toLowerCase();if(s.name.toLowerCase().indexOf(q)<0&&s.title.toLowerCase().indexOf(q)<0)return false;}return true;});}
+
+// loadStaff: handled by Supabase below
+function saveStaff(){localStorage.setItem('belita_staff',JSON.stringify(STAFF));}
+function loadTree(){
+  var d;
+  d=localStorage.getItem('belita_pos');if(d)try{S.treePositions=JSON.parse(d);}catch(e){}
+  d=localStorage.getItem('belita_clines');if(d)try{S.customLines=JSON.parse(d);}catch(e){}
+  d=localStorage.getItem('belita_rlines');if(d)try{S.removedLines=JSON.parse(d);}catch(e){}
+}
+function saveTree(){
+  localStorage.setItem('belita_pos',JSON.stringify(S.treePositions));
+  localStorage.setItem('belita_clines',JSON.stringify(S.customLines));
+  localStorage.setItem('belita_rlines',JSON.stringify(S.removedLines));
+}
+function saveCT(){
+  (S.customLines[S.cb]||[]).forEach(function(l){l.saved=true;});
+  S.pendingSave=false;
+  saveTree();
+  render();
+}
+
+
+async function exportExcel(){
+  var wb = new ExcelJS.Workbook();
+  wb.creator = "Belita NGO";
+  wb.created = new Date();
+
+  var BASE_COLORS  = {Gaza:"1A6B65",Jerusalem:"1E4D8C",Amman:"5C3A8C"};
+  var LEVEL_COLORS = {L1:"C9A84C",L2:"1A6B65",L3:"1E4D8C",L4:"888888"};
+  var DEPT_COLORS  = {"Health":"C0392B","Food Distribution":"D4891A","Logistics":"2471A3","Infrastructure":"7D6608","Water & Sanitation":"117A65","Coordination":"6C3483"};
+  var bases = ["Gaza","Jerusalem","Amman"];
+
+  function hdr(hex){return {type:"pattern",pattern:"solid",fgColor:{argb:"FF"+hex}};}
+  function fnt(hex,bold,size){return {name:"Calibri",color:{argb:"FF"+hex},bold:!!bold,size:size||10};}
+  function aln(h,v){return {horizontal:h||"left",vertical:v||"middle"};}
+  function bdr(){var s={style:"thin",color:{argb:"FFE2E6E5"}};return {bottom:s,right:s};}
+
+  bases.forEach(function(base){
+    var staff=STAFF.filter(function(s){return s.base===base;});
+    if(!staff.length)return;
+    staff.sort(function(a,b){return a.level!==b.level?a.level.localeCompare(b.level):a.name.localeCompare(b.name);});
+
+    var ws=wb.addWorksheet(base);
+    var bc=BASE_COLORS[base]||"1A6B65";
+
+    ws.columns=[
+      {key:"id",width:10},{key:"name",width:26},{key:"title",width:30},
+      {key:"dept",width:22},{key:"level",width:9},{key:"phone",width:20},
+      {key:"email",width:32},{key:"reports",width:26}
+    ];
+
+    // Header
+    var hRow=ws.addRow(["ID","Nom complet","Poste","Département","Niveau","Téléphone","Email","Rapporte à"]);
+    hRow.height=24;
+    hRow.eachCell(function(cell){
+      cell.font=fnt("FFFFFF",true,11);
+      cell.fill=hdr(bc);
+      cell.alignment=aln("center");
+    });
+
+    // Data
+    staff.forEach(function(s,i){
+      var rowBg=i%2===0?"F5F9F8":"FFFFFF";
+      var isKey=s.level==="L1"||s.level==="L2";
+      var lc=LEVEL_COLORS[s.level]||"888888";
+      var dc=DEPT_COLORS[s.dept]||"888888";
+      var row=ws.addRow([s.id,s.name,s.title,s.dept,s.level,s.phone,s.email,s.reportsTo||"—"]);
+      row.height=20;
+
+      row.getCell(1).font=fnt("1A6B65",true,9);
+      row.getCell(1).fill=hdr("E8F4F3");
+      row.getCell(1).alignment=aln("center");
+
+      row.getCell(2).font=fnt("1C2B2A",isKey,10);
+      row.getCell(2).fill=hdr(isKey?"FFFDF0":rowBg);
+
+      row.getCell(3).font=fnt("4A6361",false,10);
+      row.getCell(3).fill=hdr(rowBg);
+
+      row.getCell(4).font=fnt(dc,true,9);
+      row.getCell(4).fill=hdr(rowBg);
+
+      row.getCell(5).font=fnt("FFFFFF",true,10);
+      row.getCell(5).fill=hdr(lc);
+      row.getCell(5).alignment=aln("center");
+
+      row.getCell(6).font=fnt("1A6B65",false,10);
+      row.getCell(6).fill=hdr(rowBg);
+
+      row.getCell(7).font=fnt("4A6361",false,9);
+      row.getCell(7).fill=hdr(rowBg);
+
+      row.getCell(8).font=fnt("888888",false,9);
+      row.getCell(8).fill=hdr(rowBg);
+
+      row.eachCell(function(cell){cell.border=bdr();cell.alignment=aln("left","middle");});
+      row.getCell(1).alignment=aln("center","middle");
+      row.getCell(5).alignment=aln("center","middle");
+    });
+
+    ws.views=[{state:"frozen",ySplit:1}];
+  });
+
+  // Summary sheet
+  var wsSummary=wb.addWorksheet("Résumé");
+  wsSummary.columns=[{width:14},{width:13},{width:18},{width:18},{width:16},{width:18}];
+  var sumHRow=wsSummary.addRow(["Base","Total Staff","L1 — Directeurs","L2 — Managers","L3 — Officers","L4 — Field Staff"]);
+  sumHRow.height=26;
+  sumHRow.eachCell(function(cell){cell.font=fnt("FFFFFF",true,11);cell.fill=hdr("124E49");cell.alignment=aln("center");});
+
+  bases.forEach(function(base){
+    var bs=STAFF.filter(function(s){return s.base===base;});
+    var bc=BASE_COLORS[base]||"1A6B65";
+    var row=wsSummary.addRow([base,bs.length,
+      bs.filter(function(s){return s.level==="L1";}).length,
+      bs.filter(function(s){return s.level==="L2";}).length,
+      bs.filter(function(s){return s.level==="L3";}).length,
+      bs.filter(function(s){return s.level==="L4";}).length
+    ]);
+    row.height=22;
+    row.getCell(1).font=fnt("FFFFFF",true,11); row.getCell(1).fill=hdr(bc);
+    row.getCell(2).font=fnt("1C2B2A",true,11); row.getCell(2).fill=hdr(bc+"33");
+    [LEVEL_COLORS.L1,LEVEL_COLORS.L2,LEVEL_COLORS.L3,LEVEL_COLORS.L4].forEach(function(lc,i){
+      row.getCell(i+3).font=fnt("FFFFFF",true,11); row.getCell(i+3).fill=hdr(lc);
+    });
+    row.eachCell(function(cell){cell.alignment=aln("center");cell.border=bdr();});
+  });
+
+  var tRow=wsSummary.addRow(["TOTAL",STAFF.length,
+    STAFF.filter(function(s){return s.level==="L1";}).length,
+    STAFF.filter(function(s){return s.level==="L2";}).length,
+    STAFF.filter(function(s){return s.level==="L3";}).length,
+    STAFF.filter(function(s){return s.level==="L4";}).length
+  ]);
+  tRow.height=26;
+  tRow.eachCell(function(cell){cell.font=fnt("FFFFFF",true,12);cell.fill=hdr("124E49");cell.alignment=aln("center");});
+
+  // Download
+  var buf=await wb.xlsx.writeBuffer();
+  var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="Belita_Directory_"+new Date().toISOString().slice(0,10)+".xlsx";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPDF(){
+  var el=document.getElementById('orgchart-inner')||document.getElementById('orgchart-export');
+  if(!el){alert('Aller dans Org Chart pour exporter');return;}
+  var deptLabel=S.od==='All'?'Tous départements':S.od;
+  var staffCount=S.od==='All'?STAFF.filter(function(s){return s.base===S.ob;}).length:STAFF.filter(function(s){return s.base===S.ob&&s.dept===S.od;}).length;
+  html2canvas(el,{scale:3,useCORS:true,logging:false,backgroundColor:'#F4F7F6'}).then(function(canvas){
+    var pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    var hh=12,margin=8,aw=pw-margin*2,ah=ph-margin*2-hh;
+    var ratio=Math.min(aw/canvas.width,ah/canvas.height);
+    var iw=canvas.width*ratio,ih=canvas.height*ratio;
+    var ix=(pw-iw)/2,iy=hh+margin+(ah-ih)/2;
+    // Header bar
+    pdf.setFillColor(18,78,73);pdf.rect(0,0,pw,hh,'F');
+    // Logo dot
+    pdf.setFillColor(201,168,76);pdf.circle(8,hh/2,3,'F');
+    // Title
+    pdf.setFontSize(12);pdf.setFont(undefined,'bold');pdf.setTextColor(255,255,255);
+    pdf.text('Belita NGO — '+S.ob+' Base',16,7.5);
+    // Subtitle
+    pdf.setFontSize(8);pdf.setFont(undefined,'normal');pdf.setTextColor(201,168,76);
+    pdf.text(deptLabel+' • '+staffCount+' staff',16,11);
+    // Date
+    pdf.setTextColor(180,200,198);
+    pdf.text(new Date().toLocaleDateString('fr-FR'),pw-margin,7.5,{align:'right'});
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',ix,iy,iw,ih);
+    pdf.save('Belita_Organigramme_'+S.ob+'.pdf');
+  });
+}
+
+// updateReportsTo() is in form.js
+
+// addSubordinate() is in form.js
+
+// showAddModal() is in form.js
+// addStaff() is in form.js
+async function rmStaff(id){
+  var p=STAFF.find(function(s){return s.id===id;});
+  if(!p||!confirm('Supprimer '+p.name+' ?'))return;
+  if(AUTH.org_id){var r=await sb.from('staff').delete().eq('id',id).eq('org_id',AUTH.org_id);if(r.error){alert('Erreur: '+r.error.message);return;}}
+  STAFF=STAFF.filter(function(s){return s.id!==id;});saveStaff();render();
+}
+
+function showQRDept(base,dept){
+  S.qr={base:base,dept:dept,person:null};
+  S.modal='qr';render();
+  setTimeout(function(){
+    var c=document.getElementById("qr-target");
+    if(!c)return;
+    var deptStaff=STAFF.filter(function(s){return s.base===base&&s.dept===dept;});
+    var data=window.location.origin+'?base='+encodeURIComponent(base)+'&dept='+encodeURIComponent(dept);
+    var img=document.createElement('img');
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
+    img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
+    c.innerHTML='<div style="display:flex;justify-content:center;padding:8px"><div style="font-size:10px;color:#4A6361">Chargement...</div></div>';
+    img.onload=function(){c.innerHTML='';c.appendChild(img);};
+    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible</div>';};
+  },100);
+}
+
+function showQR(base,id){
+  S.qr=base?{base:base,person:null}:{base:null,person:STAFF.find(function(s){return s.id===id;})};
+  S.modal='qr';render();
+  setTimeout(function(){
+    var c=document.getElementById("qr-target");
+    if(!c)return;
+    var p=S.qr.person;
+    // For base QR: encode ALL staff vCards (or key contacts if too many)
+    var data;
+    if(base){
+      var baseStaff=STAFF.filter(function(s){return s.base===base;});
+      // QR has size limit ~2000 chars, use L1+L2 for base QR (key contacts)
+      var keyStaff=baseStaff.filter(function(s){return s.level==='L1'||s.level==='L2';});
+      // URL pointing to app managers page — login required
+      data=window.location.origin+'?base='+encodeURIComponent(base)+'&dept=managers';
+    } else {
+      data='BEGIN:VCARD\nVERSION:3.0\nFN:'+p.name+'\nTEL:'+p.phone+'\nEND:VCARD';
+    }
+    var img=document.createElement('img');
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(data);
+    img.style.cssText='width:200px;height:200px;display:block;border-radius:4px';
+    img.alt='QR Code';
+    c.innerHTML='<div style="display:flex;justify-content:center;padding:8px"><div style="font-size:10px;color:#4A6361">Chargement...</div></div>';
+    img.onload=function(){c.innerHTML='';c.appendChild(img);};
+    img.onerror=function(){c.innerHTML='<div style="color:#C0392B;font-size:11px;padding:10px;text-align:center">QR non disponible<br><small>Vérifier connexion internet</small></div>';};
+  },100);
+}
+
+function triggerAlert(){
+  if(!S.alertForm.type||!S.alertForm.location){alert("Remplir Type et Localisation");return;}
+  var now=new Date(),t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  S.mockAlert={id:'ALT-'+now.getFullYear()+'-'+Math.floor(Math.random()*999).toString().padStart(3,'0'),time:t,type:S.alertForm.type,location:S.alertForm.location};
+  alert('DEMO — Alerte envoyée\nID: '+S.mockAlert.id+'\nHeure: '+t+'\nType: '+S.alertForm.type);render();
+}
+
+function renderNav(){
+  var tabs=["directory","orgchart","commtree"],labels={directory:"Directory",orgchart:"Org Chart",commtree:"Comm Tree"};
+  var tb=tabs.map(function(t){return '<button class="ntab'+(S.tab===t?" on":"")+'" onclick="S.tab=\''+t+'\';render()">'+labels[t]+'</button>';}).join("");
+  var kH=BASES.map(function(b){var n=STAFF.filter(function(s){return s.base===b;}).length;return '<div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:rgba(255,255,255,.9)">'+n+'</span><span class="kl">'+b+'</span></div>';}).join("");
+  return '<div class="nav"><div class="brand"><div style="width:20px;height:20px;border-radius:4px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:10px">&#x2B21;</div>Belita<span class="brand-tag">Comm Tree</span></div><div style="display:flex;gap:4px;margin-left:auto">'+tb+'</div></div>'
+    +'<div class="kpi"><div style="display:flex;align-items:baseline;gap:4px"><span class="kn" style="color:#C9A84C">'+STAFF.length+'</span><span class="kl">Total</span></div><div class="ksep"></div>'+kH+'<span style="margin-left:auto;font-size:8px;color:rgba(255,255,255,.35)">v4.5</span><button onclick="doLogout()" style="padding:3px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:4px;color:rgba(255,255,255,.65);font-size:9px;cursor:pointer;margin-left:8px">Déconnexion</button></div>';
+}
+
+function renderDir(){
+  var fs=filt();
+  var bO=["All"].concat(BASES).map(function(b){return '<option value="'+b+'"'+(S.fb===b?" selected":"")+">"+(b==="All"?"Toutes bases":b)+"</option>";}).join("");
+  var dO=["All"].concat(DEPTS).map(function(d){return '<option value="'+d+'"'+(S.fd===d?" selected":"")+">"+(d==="All"?"Tous depts":d.split(" ")[0])+"</option>";}).join("");
+  var lO=["All","L1","L2","L3","L4"].map(function(l){return '<option value="'+l+'"'+(S.fl===l?" selected":"")+">"+(l==="All"?"Tous niveaux":l)+"</option>";}).join("");
+  var h='<div class="toolbar"><button class="btn-tb gold" onclick="showAddModal()">+ Ajouter</button><button class="btn-tb primary" onclick="exportExcel()">Export Excel</button><span style="font-size:10px;color:#4A6361;margin-left:auto">'+fs.length+' staff</span></div>';
+  h+='<div class="filters"><input placeholder="Rechercher…" value="'+he(S.search)+'" oninput="S.search=this.value;render()"><select onchange="S.fb=this.value;render()">'+bO+'</select><select onchange="S.fd=this.value;render()">'+dO+'</select><select onchange="S.fl=this.value;render()">'+lO+'</select></div>';
+  var bases=S.fb==="All"?BASES:[S.fb];
+  bases.forEach(function(base){
+    var bs=fs.filter(function(s){return s.base===base;});if(!bs.length)return;
+    // Get depts present in this base
+    var baseDepts=DEPTS.filter(function(d){return STAFF.some(function(s){return s.base===base&&s.dept===d;});});
+    h+='<div class="bh"><div class="bbar" style="background:'+BC[base]+'"></div><span class="btitle">'+base+'</span><span class="bcnt">'+bs.length+' staff</span><button class="bqr" onclick="showQR(\''+base+'\',null)">QR Managers</button></div>';
+    // Dept QR buttons row
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#F8FAFA;border-radius:6px;border:1px solid #e2e6e5">';
+    h+='<span style="font-size:9px;font-weight:700;color:#4A6361;text-transform:uppercase;letter-spacing:.08em;align-self:center;margin-right:4px">QR par dept :</span>';
+    baseDepts.forEach(function(d){
+      var cnt=STAFF.filter(function(s){return s.base===base&&s.dept===d;}).length;
+      var dc=DC[d]||'#888';
+      h+='<button style="padding:4px 10px;border-radius:4px;font-size:9px;font-weight:600;border:1.5px solid '+dc+';background:white;color:'+dc+';cursor:pointer" onclick="showQRDept(\''+base+'\',\''+d+'\')">';
+      h+=d.split(' ')[0]+' ('+cnt+')</button>';
+    });
+    h+='</div>';
+    var byL={};bs.slice().sort(function(a,b){return a.name.replace(/^Dr\.?\s*/i,"").localeCompare(b.name.replace(/^Dr\.?\s*/i,""));}).forEach(function(s){var l=s.name.replace(/^Dr\.?\s*/i,"")[0].toUpperCase();if(!byL[l])byL[l]=[];byL[l].push(s);});
+    Object.keys(byL).sort().forEach(function(l){
+      h+='<div class="al">'+l+'</div>';
+      byL[l].forEach(function(p){
+        h+='<div class="sr"><div class="av" style="background:'+BC[p.base]+';width:28px;height:28px;font-size:10px">'+ini(p.name)+'</div>'
+          +'<span class="sn">'+he(p.name)+'</span><span class="dd" style="background:'+(DC[p.dept]||"#888")+'"></span>'
+          +'<span class="st">'+he(p.title)+'</span><span class="sp">'+he(p.phone)+'</span>'
+          +'<span class="lp" style="'+lvS(p.level)+'">'+p.level+'</span>'
+          +'<button class="rqr" onclick="showQR(null,\''+p.id+'\')">&#x229E;</button>'
+          +'<button class="rm" onclick="rmStaff(\''+p.id+'\')">×</button></div>';
+      });
+    });
+  });
+  return h;
+}
+
+function renderOrg(){
+  var bc=BC[S.ob];
+  var all=STAFF.filter(function(s){return s.base===S.ob;});
+  var bs=S.od==='All'?all:all.filter(function(s){return s.dept===S.od;});
+  var h='<div class="toolbar">';
+  h+='<button class="btn-tb primary" onclick="exportPDF()">📄 Export PDF</button>';
+  h+='<div class="zoom-grp" style="margin-left:auto">';
+  h+='<button onclick="S.orgZoom=Math.max(0.3,Math.round((S.orgZoom-0.1)*10)/10);render()">−</button>';
+  h+='<span>'+Math.round((S.orgZoom||1)*100)+'%</span>';
+  h+='<button onclick="S.orgZoom=Math.min(2,Math.round((S.orgZoom+0.1)*10)/10);render()">+</button>';
+  h+='</div></div>';
+  var bb=BASES.map(function(b){return '<button class="ob'+(S.ob===b?' on':'')+'" style="'+(S.ob===b?'background:'+BC[b]+';color:white;border-color:'+BC[b]:'')+'" onclick="S.ob=\''+b+'\';S.od=\'All\';render()">'+b+'</button>';}).join('');
+  var db='<button class="ob'+(S.od==='All'?' on':'')+'" style="'+(S.od==='All'?'background:#C9A84C;color:#1C2B2A;border-color:#C9A84C':'')+'" onclick="S.od=\'All\';render()">Tous</button>';
+  DEPTS.forEach(function(d){var c=all.filter(function(s){return s.dept===d;}).length;if(c)db+='<button class="ob'+(S.od===d?' on':'')+'" style="'+(S.od===d?'background:'+DC[d]+';color:white;border-color:'+DC[d]:'')+'" onclick="S.od=\''+d+'\';render()">'+d.split(' ')[0]+' ('+c+')</button>';});
+  var byN={};bs.forEach(function(s){byN[s.name]=s;});
+  var roots=bs.filter(function(s){return !byN[s.reportsTo];});
+  var ch={};bs.forEach(function(s){if(!ch[s.reportsTo])ch[s.reportsTo]=[];ch[s.reportsTo].push(s);});
+  var NW2=178,NH2=68,HG=14,VG=56,PAD=24,pos={},mx=0,my=0;
+  function sw(n){var c=ch[n.name]||[];if(!c.length)return NW2;return Math.max(NW2,c.reduce(function(a,x){return a+sw(x);},0)+(c.length-1)*HG);}
+  function lay(nds,y,sx){var x=sx;nds.forEach(function(n){var s=sw(n),cx=x+s/2-NW2/2;pos[n.name]={x:cx,y:y};if(cx+NW2>mx)mx=cx+NW2;if(y+NH2>my)my=y+NH2;var c=ch[n.name]||[];if(c.length)lay(c,y+NH2+VG,x);x+=s+HG;});}
+  lay(roots,PAD,PAD);
+  var W=mx+PAD,H=my+NH2+PAD;
+  // Defs: drop-shadow filter + clip paths for left stripe on non-L1 cards
+  var defs='<defs><filter id="csh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#1C2B2A" flood-opacity="0.1"/></filter>';
+  bs.forEach(function(s){var p=pos[s.name];if(!p||s.level==='L1')return;defs+='<clipPath id="cp'+s.id.replace(/-/g,'')+'"><rect x="'+p.x+'" y="'+p.y+'" width="'+NW2+'" height="'+NH2+'" rx="9"/></clipPath>';});
+  defs+='</defs>';
+  // Connectors — orthogonal H-bar
+  var edges='';
+  bs.forEach(function(par){
+    var pp=pos[par.name];if(!pp)return;
+    var kids=(ch[par.name]||[]).filter(function(c){return !!pos[c.name];});
+    if(!kids.length)return;
+    var pCX=pp.x+NW2/2,pBY=pp.y+NH2;
+    var cCXs=kids.map(function(c){return pos[c.name].x+NW2/2;});
+    var midY=Math.round(pBY+VG/2);
+    edges+='<line x1="'+pCX+'" y1="'+pBY+'" x2="'+pCX+'" y2="'+midY+'" stroke="#B8CCCB" stroke-width="1.5" stroke-linecap="round"/>';
+    if(kids.length>1)edges+='<line x1="'+Math.min.apply(null,cCXs)+'" y1="'+midY+'" x2="'+Math.max.apply(null,cCXs)+'" y2="'+midY+'" stroke="#B8CCCB" stroke-width="1.5" stroke-linecap="round"/>';
+    kids.forEach(function(c){var cx=pos[c.name].x+NW2/2,cy=pos[c.name].y;edges+='<line x1="'+cx+'" y1="'+midY+'" x2="'+cx+'" y2="'+cy+'" stroke="#B8CCCB" stroke-width="1.5" stroke-linecap="round"/>';});
+  });
+  // Nodes
+  var nodes='';
+  bs.forEach(function(s){
+    var p=pos[s.name];if(!p)return;
+    var px=p.x,py=p.y,dc=DC[s.dept]||'#888';
+    var isL1=s.level==='L1',isL2=s.level==='L2';
+    var sc=isL2?bc:dc;
+    var avCX=px+23,avCY=py+34,txtX=px+49;
+    var abbr=ini(s.name);
+    var nm=s.name.length>21?s.name.slice(0,20)+'…':s.name;
+    var ti=s.title.length>27?s.title.slice(0,26)+'…':s.title;
+    var dept=s.dept.length>22?s.dept.slice(0,21)+'…':s.dept;
+    nodes+='<g style="cursor:pointer" onclick="showQR(null,\''+s.id+'\')" filter="url(#csh)">';
+    if(isL1){
+      // Solid base-color card with subtle top sheen
+      nodes+='<rect x="'+px+'" y="'+py+'" width="'+NW2+'" height="'+NH2+'" rx="9" fill="'+bc+'"/>';
+      nodes+='<rect x="'+px+'" y="'+py+'" width="'+NW2+'" height="34" rx="9" fill="white" fill-opacity="0.06"/>';
+      // Avatar circle
+      nodes+='<circle cx="'+avCX+'" cy="'+avCY+'" r="17" fill="white" fill-opacity="0.18"/>';
+      nodes+='<text x="'+avCX+'" y="'+(avCY+4)+'" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="white">'+abbr+'</text>';
+      // Name & title
+      nodes+='<text x="'+txtX+'" y="'+(py+25)+'" font-family="DM Sans,sans-serif" font-size="10.5" font-weight="700" fill="white">'+nm+'</text>';
+      nodes+='<text x="'+txtX+'" y="'+(py+40)+'" font-family="DM Sans,sans-serif" font-size="8.5" fill="white" fill-opacity="0.8">'+ti+'</text>';
+      nodes+='<text x="'+txtX+'" y="'+(py+57)+'" font-family="DM Sans,sans-serif" font-size="7.5" letter-spacing="0.5" fill="white" fill-opacity="0.55">'+s.dept.toUpperCase()+'</text>';
+      // Level pill top-right
+      nodes+='<rect x="'+(px+NW2-31)+'" y="'+(py+8)+'" width="25" height="15" rx="7" fill="white" fill-opacity="0.22"/>';
+      nodes+='<text x="'+(px+NW2-18.5)+'" y="'+(py+19)+'" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" font-weight="700" fill="white">'+s.level+'</text>';
+    } else {
+      // White card + clipped left accent stripe
+      nodes+='<rect x="'+px+'" y="'+py+'" width="'+NW2+'" height="'+NH2+'" rx="9" fill="white" stroke="'+sc+'" stroke-width="1.5" stroke-opacity="0.15"/>';
+      nodes+='<rect x="'+px+'" y="'+py+'" width="5" height="'+NH2+'" fill="'+sc+'" clip-path="url(#cp'+s.id.replace(/-/g,'')+')" />';
+      // Avatar
+      nodes+='<circle cx="'+avCX+'" cy="'+avCY+'" r="15" fill="'+sc+'" fill-opacity="0.1"/>';
+      nodes+='<text x="'+avCX+'" y="'+(avCY+4)+'" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="'+(isL2?10:9)+'" font-weight="700" fill="'+sc+'">'+abbr+'</text>';
+      // Name & title
+      nodes+='<text x="'+txtX+'" y="'+(py+25)+'" font-family="DM Sans,sans-serif" font-size="'+(isL2?10:9.5)+'" font-weight="'+(isL2?'700':'600')+'" fill="#1C2B2A">'+nm+'</text>';
+      nodes+='<text x="'+txtX+'" y="'+(py+39)+'" font-family="DM Sans,sans-serif" font-size="8" fill="#5A7170">'+ti+'</text>';
+      // Dept dot + label
+      nodes+='<circle cx="'+txtX+'" cy="'+(py+54)+'" r="3" fill="'+dc+'"/>';
+      nodes+='<text x="'+(txtX+8)+'" y="'+(py+58)+'" font-family="DM Sans,sans-serif" font-size="7.5" fill="'+dc+'">'+dept+'</text>';
+      // Level pill
+      nodes+='<rect x="'+(px+NW2-29)+'" y="'+(py+8)+'" width="23" height="14" rx="7" fill="'+sc+'" fill-opacity="0.1"/>';
+      nodes+='<text x="'+(px+NW2-17.5)+'" y="'+(py+18)+'" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="'+sc+'">'+s.level+'</text>';
+    }
+    nodes+='</g>';
+  });
+  return h
+    +'<div style="margin-bottom:10px">'+bb+'</div>'
+    +'<div style="margin-bottom:10px">'+db+'</div>'
+    +'<div class="orgbox" id="orgchart-export" style="background:#F4F7F6;overflow:auto"><div id="orgchart-inner" style="transform:scale('+(S.orgZoom||1)+');transform-origin:top left;display:inline-block">'
+    +'<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'+defs+edges+nodes+'</svg>'
+    +'</div></div>';
+}
+
+// ── Comm Tree ─────────────────────────────────────────────────────────────────
+function renderCT(){
+  var base=S.cb;
+  var bb=BASES.map(function(b){return '<button class="ob'+(S.cb===b?" on":"")+'" style="'+(S.cb===b?"background:"+BC[b]+";color:white;border-color:"+BC[b]:"")+'" onclick="S.cb=\''+b+'\';render()">'+b+'</button>';}).join("");
+  var h='<div style="margin-bottom:10px">'+bb+'</div>';
+
+
+  // Toolbar
+  var hasUnsaved=S.pendingSave||(S.customLines[S.cb]||[]).some(function(l){return !l.saved;});
+  h+='<div class="toolbar">';
+  h+='<button class="btn-tb '+(S.editMode?'active':'primary')+'" onclick="toggleEdit()">'+(S.editMode?'✓ Quitter édition':'✏️ Éditer')+'</button>';
+  if(hasUnsaved) h+='<button class="btn-tb gold" onclick="saveCT()">💾 Sauvegarder</button>';
+  h+='<button class="btn-tb" onclick="resetLayout()">↻ Reset</button>';
+  h+='<div class="zoom-grp"><button onclick="doZoom(-1)">−</button><span>'+Math.round(S.zoom*100)+'%</span><button onclick="doZoom(1)">+</button></div>';
+  h+='</div>';
+  if(S.editMode){
+    var staffList=STAFF.filter(function(s){return s.base===S.cb;}).slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+    var opts=staffList.map(function(s){return '<option value="'+s.id+'">'+he(s.name)+' — '+he(s.title)+'</option>';}).join('');
+    h+='<div style="background:#EEF4F3;border:1px solid #C9E8E5;border-radius:6px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    h+='<span style="font-size:10px;font-weight:700;color:#1A6B65;white-space:nowrap">AJOUTER UN LIEN :</span>';
+    h+='<select id="conn-from" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">De…</option>'+opts+'</select>';
+    h+='<span style="font-size:13px;color:#1A6B65;font-weight:700">→</span>';
+    h+='<select id="conn-to" style="padding:5px 8px;border:1.5px solid #C9E8E5;border-radius:5px;font-size:11px;flex:1;min-width:150px;outline:none"><option value="">Vers…</option>'+opts+'</select>';
+    h+='<button class="btn-tb primary" style="white-space:nowrap" onclick="addConn()">+ Ajouter</button>';
+    h+='</div>';
+  }
+
+  h+='<div class="ct-section"><div class="ct-title">Communication Tree — '+base+'</div><div class="ct-subtitle">'+STAFF.filter(function(s){return s.base===base;}).length+' staff</div>';
+  h+='<div class="tree-wrap"><div id="tree-inner" style="transform:scale('+S.zoom+');transform-origin:top left;display:inline-block">';
+  h+=renderTreeVisual(base);
+  h+='</div></div></div>';
+
+  // Alert
+  h+='<div class="ct-section"><div class="ct-title">🚨 Alerte Sécurité</div><div class="ct-subtitle">Envoyer à tous les staff de '+base+' (Demo)</div>';
+  h+='<div class="form-group"><label class="form-label">Type d\'incident</label><select class="form-select" onchange="S.alertForm.type=this.value"><option value="">Sélectionner...</option><option>Shelling/Rocket</option><option>Armed Intrusion</option><option>Kidnapping</option><option>Demonstration</option><option>Other</option></select></div>';
+  h+='<div class="form-group"><label class="form-label">Localisation</label><input type="text" class="form-input" placeholder="ex: 500m east of compound" value="'+he(S.alertForm.location)+'" oninput="S.alertForm.location=this.value"></div>';
+  h+='<button class="btn-trigger" onclick="triggerAlert()">📤 Envoyer via Telegram</button></div>';
+
+  if(S.mockAlert){
+    var total=STAFF.filter(function(s){return s.base===base;}).length;
+    var pfx=base.slice(0,3).toUpperCase();
+    var conf=Object.keys(MOCK_CONF).filter(function(id){return id.startsWith(pfx);}).length;
+    var pct=Math.round(conf/total*100);
+    h+='<div class="ct-section"><div class="ct-title">Confirmations — '+S.mockAlert.id+'</div>';
+    h+='<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div><div class="progress-text">'+conf+'/'+total+' ('+pct+'%)</div></div>';
+    var miss=STAFF.filter(function(s){return s.base===base&&!MOCK_CONF[s.id];});
+    if(miss.length) h+='<div class="missing-list">'+miss.slice(0,6).map(function(p){return '<div class="missing-item">• '+he(p.name)+'</div>';}).join('')+(miss.length>6?'<div class="missing-item">... et '+(miss.length-6)+' autres</div>':'')+'</div>';
+    h+='</div>';
+  }
+  return h;
+}
+
+// ── Tree visual ───────────────────────────────────────────────────────────────
+function renderTreeVisual(base){
+  var staff=STAFF.filter(function(s){return s.base===base;});
+  if(!staff.length)return '<div style="padding:40px;text-align:center;color:#4A6361">Aucun staff</div>';
+  var byName={};staff.forEach(function(s){byName[s.name]=s;});
+  var children={};staff.forEach(function(s){if(!children[s.reportsTo])children[s.reportsTo]=[];children[s.reportsTo].push(s);});
+  var roots=staff.filter(function(s){return s.level==="L1"||!byName[s.reportsTo];});
+  if(!roots.length)roots=[staff[0]];
+  if(!S.treePositions[base]||!Object.keys(S.treePositions[base]).length) S.treePositions[base]=autoLayout(roots,children);
+  var pos=S.treePositions[base];
+  var removed=S.removedLines[base]||[];
+  var custom=S.customLines[base]||[];
+  var maxW=600,maxH=400;
+  staff.forEach(function(s){var p=pos[s.id];if(!p)return;if(p.x+NW+40>maxW)maxW=p.x+NW+40;if(p.y+NH+40>maxH)maxH=p.y+NH+40;});
+
+  // Build SVG — lines first, interactive circles on top
+  var svgLines='', svgBtns='';
+  // Auto hierarchy lines
+  staff.forEach(function(par){
+    var ch=(children[par.name]||[]).filter(function(c){return !!pos[c.id]&&!removed.some(function(r){return r.parentId===par.id&&r.childId===c.id;});});
+    var pp=pos[par.id];if(!ch.length||!pp)return;
+    var pCX=pp.x+NW/2,pBY=pp.y+NH;
+    var cCXs=ch.map(function(c){return pos[c.id].x+NW/2;});
+    var cTY=Math.min.apply(null,ch.map(function(c){return pos[c.id].y;}));
+    var midY=Math.round(pBY+(cTY-pBY)/2);
+    svgLines+='<line x1="'+pCX+'" y1="'+pBY+'" x2="'+pCX+'" y2="'+midY+'" stroke="#B5C8C6" stroke-width="1.5" stroke-linecap="round"/>';
+    if(ch.length>1) svgLines+='<line x1="'+Math.min.apply(null,cCXs)+'" y1="'+midY+'" x2="'+Math.max.apply(null,cCXs)+'" y2="'+midY+'" stroke="#B5C8C6" stroke-width="1.5" stroke-linecap="round"/>';
+    ch.forEach(function(c,i){
+      var cx=cCXs[i],cy=pos[c.id].y;
+      svgLines+='<line x1="'+cx+'" y1="'+midY+'" x2="'+cx+'" y2="'+cy+'" stroke="#B5C8C6" stroke-width="1.5" stroke-linecap="round"/>';
+      if(S.editMode){
+        var by=Math.round((midY+cy)/2);
+        svgBtns+='<circle cx="'+cx+'" cy="'+by+'" r="7" fill="white" stroke="#C0392B" stroke-width="1.3" style="cursor:pointer;pointer-events:all" onclick="delLine(\''+base+'\',\''+par.id+'\',\''+c.id+'\')"/>';
+        svgBtns+='<text x="'+cx+'" y="'+(by+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">×</text>';
+      }
+    });
+  });
+  // Custom lines
+  custom.forEach(function(ln,idx){
+    var fp=pos[ln.fromId],tp=pos[ln.toId];
+    if(!fp||!tp)return;
+    var fCX=fp.x+NW/2,fCY=fp.y+NH/2,tCX=tp.x+NW/2,tCY=tp.y+NH/2;
+    var dx=tCX-fCX,dy=tCY-fCY;
+    var x1,y1,x2,y2;
+    if(Math.abs(dx)>=Math.abs(dy)){
+      x1=Math.round(dx>0?fp.x+NW:fp.x);y1=Math.round(fCY);
+      x2=Math.round(dx>0?tp.x:tp.x+NW);y2=Math.round(tCY);
+    } else {
+      x1=Math.round(fCX);y1=Math.round(dy>0?fp.y+NH:fp.y);
+      x2=Math.round(tCX);y2=Math.round(dy>0?tp.y:tp.y+NH);
+    }
+    var color=ln.saved?'#B5C8C6':'#C9A84C';
+    var dash=ln.saved?'':'stroke-dasharray="6,3"';
+    svgLines+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="2" stroke-linecap="round" '+dash+'/>';
+    if(S.editMode){
+      var mx=Math.round((x1+x2)/2),my=Math.round((y1+y2)/2);
+      svgBtns+='<circle cx="'+mx+'" cy="'+my+'" r="7" fill="white" stroke="#C0392B" stroke-width="1.3" style="cursor:pointer;pointer-events:all" onclick="delCustom(\''+base+'\','+idx+')"/>';
+      svgBtns+='<text x="'+mx+'" y="'+(my+4)+'" text-anchor="middle" font-size="11" fill="#C0392B" style="pointer-events:none">×</text>';
+    }
+  });
+
+  // SVG: lines layer (behind nodes) + buttons layer (above nodes)
+  var svgLineEl='<svg style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:0" width="'+maxW+'" height="'+maxH+'">'+svgLines+'</svg>';
+  var svgBtnEl='<svg style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:2" width="'+maxW+'" height="'+maxH+'">'+svgBtns+'</svg>';
+
+  // Nodes
+  var nodes='';
+  staff.forEach(function(s){
+    var p=pos[s.id];if(!p)return;
+    nodes+='<div class="tnode" data-id="'+s.id+'"'
+      +' style="left:'+p.x+'px;top:'+p.y+'px;z-index:1;cursor:grab">'
+      +'<div class="nbody"><div class="nname">'+he(s.name)+'</div><div class="ntitle">'+he(s.title)+'</div></div>'
+      +'</div>';
+  });
+
+  return '<div style="position:relative;width:'+maxW+'px;height:'+maxH+'px">'+svgLineEl+nodes+svgBtnEl+'</div>';
+}
+
+function autoLayout(roots,children){
+  var pos={},XGAP=20,YS=100;
+  function sw(p){var ch=children[p.name]||[];if(!ch.length)return NW;return Math.max(NW,ch.reduce(function(a,c){return a+sw(c)+XGAP;},0)-XGAP);}
+  function lay(p,cx,y){pos[p.id]={x:Math.round(cx-NW/2),y:y};var ch=children[p.name]||[];if(!ch.length)return;var ws=ch.map(sw),tot=ws.reduce(function(a,b){return a+b;},0)+(ch.length-1)*XGAP,x=cx-tot/2;ch.forEach(function(c,i){lay(c,x+ws[i]/2,y+YS);x+=ws[i]+XGAP;});}
+  var x=80;roots.forEach(function(r){var w=sw(r);lay(r,x+w/2,40);x+=w+80;});
+  return pos;
+}
+
+function doZoom(dir){S.zoom=Math.round(Math.min(2,Math.max(0.25,S.zoom+dir*0.1))*10)/10;render();}
+
+function toggleEdit(){
+  S.editMode=!S.editMode;
+  if(!S.editMode)saveTree();
+  render();
+}
+function addConn(){
+  var fromId=document.getElementById('conn-from').value;
+  var toId=document.getElementById('conn-to').value;
+  if(!fromId||!toId||fromId===toId){alert('Sélectionner deux nœuds différents');return;}
+  if(!S.customLines[S.cb])S.customLines[S.cb]=[];
+  S.customLines[S.cb].push({fromId:fromId,toId:toId,saved:false});
+  S.pendingSave=true;
+  render();
+}
+function resetLayout(){if(!confirm('Réinitialiser la mise en page ?'))return;delete S.treePositions[S.cb];saveTree();render();}
+
+function delLine(base,parentId,childId){
+  if(!S.removedLines[base])S.removedLines[base]=[];
+  S.removedLines[base].push({parentId:parentId,childId:childId});render();
+}
+function delCustom(base,idx){if(S.customLines[base])S.customLines[base].splice(idx,1);render();}
+
+// Node drag/click — named functions so removeEventListener works cleanly
+var _d={on:false,moved:false,id:null,mx:0,my:0,ox:0,oy:0};
+
+function onTreeMove(ev){
+  if(!_d.on)return;
+  var dx=ev.clientX-_d.mx,dy=ev.clientY-_d.my;
+  if(!_d.moved&&(Math.abs(dx)>5||Math.abs(dy)>5))_d.moved=true;
+  if(_d.moved){
+    ev.preventDefault();
+    var p=S.treePositions[S.cb]&&S.treePositions[S.cb][_d.id];
+    if(p){
+      p.x=Math.max(0,Math.round(_d.ox+dx/S.zoom));
+      p.y=Math.max(0,Math.round(_d.oy+dy/S.zoom));
+      var n=document.querySelector('[data-id="'+_d.id+'"]');
+      if(n){n.style.left=p.x+'px';n.style.top=p.y+'px';}
+    }
+  }
+}
+
+function onTreeUp(){
+  document.removeEventListener('mousemove',onTreeMove);
+  document.removeEventListener('mouseup',onTreeUp);
+  if(_d.moved){S.pendingSave=true;render();}
+  _d={on:false,moved:false,id:null,mx:0,my:0,ox:0,oy:0};
+}
+
+// ── Node drag ─────────────────────────────────────────────────────────────────
+function attachTreeListeners(){
+  document.querySelectorAll('.tnode').forEach(function(el){
+    el.addEventListener('mousedown',function(e){
+      var id=el.dataset.id;
+      var sp=S.treePositions[S.cb]&&S.treePositions[S.cb][id];
+      _d={on:true,moved:false,id:id,mx:e.clientX,my:e.clientY,ox:sp?sp.x:0,oy:sp?sp.y:0};
+      document.addEventListener('mousemove',onTreeMove);
+      document.addEventListener('mouseup',onTreeUp);
+    });
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  var h='<div class="main">';
+  if(S.tab==='directory') h+=renderDir();
+  else if(S.tab==='orgchart') h+=renderOrg();
+  else if(S.tab==='commtree') h+=renderCT();
+  h+='</div>';
+  document.getElementById('app').innerHTML=renderNav()+h+renderModal();
+  if(S.tab==='commtree') attachTreeListeners();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function renderModal(){
+  if(!S.modal)return'';
+  if(S.modal==='qr'){
+    var title,sub,note;
+    if(S.qr.dept){
+      var b=S.qr.base,d=S.qr.dept;
+      var cnt=STAFF.filter(function(s){return s.base===b&&s.dept===d;}).length;
+      title="QR — "+d;sub=b+" • "+cnt+" staff";note="Scanner pour importer tous les contacts "+d+" de "+b+".";
+    } else if(S.qr.base){var b=S.qr.base,total=STAFF.filter(function(s){return s.base===b;}).length,cnt=STAFF.filter(function(s){return s.base===b&&(s.level==="L1"||s.level==="L2");}).length;title="QR — "+b+" Managers";sub=cnt+" contacts clés (L1+L2) sur "+total+" staff";note="Scanner pour importer directeurs & managers de "+b+".";}
+    else{var p=S.qr.person;title=he(p.name);sub=he(p.phone);note="Scanner pour importer le contact.";}
+    return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
+  }
+  if(S.modal==='addstaff'){
+    return renderAddStaffModal();
+  }
+  return '';
+}
+loadTree();init();
+
+</script></body></html>
