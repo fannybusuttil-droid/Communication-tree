@@ -605,15 +605,34 @@ async function addStaff() {
     if(r.error){alert('Erreur: '+r.error.message);return;}
   }
   STAFF.push(ns);
+
+  // Update direct subordinates reportsTo
   newSubs.forEach(function(sid){
     var sub=STAFF.find(function(s){return s.id===sid;});
-    if(sub){sub.reportsTo=ns.name;if(AUTH.org_id)sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);}
+    if(sub){
+      sub.reportsTo=ns.name;
+      if(AUTH.org_id) sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);
+    }
   });
+
+  // Note: sub-subordinates follow automatically since their reportsTo
+  // still points to their direct manager who is now under ns
+
   saveStaff();
-  if(S.treePositions[ns.base])delete S.treePositions[ns.base];
-  saveTree();newSubs=[];S.modal=null;S.tab='orgchart';S.ob=ns.base;S.od='All';
+
+  // Reset ALL tree layouts to force full recalculation
+  S.treePositions = {};
+  S.customLines = {};
+  S.removedLines = {};
+  saveTree();
+
+  newSubs = [];
+  S.modal = null;
+  S.tab = 'orgchart';
+  S.ob = ns.base;
+  S.od = 'All';
   render();
-  alert('✅ '+ns.name+' ajouté !');
+  alert('✅ ' + ns.name + ' ajouté dans ' + ns.base + ' !');
 }
 
 
