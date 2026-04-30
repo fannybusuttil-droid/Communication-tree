@@ -3,6 +3,7 @@
 <title>Belita Communication Tree v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
+<script src="form.js"></script>
 <script src="export.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -448,69 +449,12 @@ function exportPDF(){
   });
 }
 
-function updateReportsTo(){
-  var base=document.getElementById('nb').value;
-  var sel=document.getElementById('nr');
-  var subSel=document.getElementById('sub-picker');
-  if(!sel)return;
-  sel.innerHTML='<option value="NA">N/A — Directeur de base</option>';
-  if(subSel)subSel.innerHTML='<option value="">+ Ajouter un subordonné...</option>';
-  if(!base){
-    sel.innerHTML+='<option value="" disabled>── Choisir une base d\'abord ──</option>';
-    return;
-  }
-  var baseStaff=STAFF.filter(function(s){return s.base===base;}).sort(function(a,b){return a.name.localeCompare(b.name);});
-  baseStaff.forEach(function(s){
-    sel.innerHTML+='<option value="'+s.name+'">'+s.name+' — '+s.title+' ('+s.level+')</option>';
-    if(subSel&&!(S.newSubordinates||[]).includes(s.id)){
-      subSel.innerHTML+='<option value="'+s.id+'">'+s.name+' — '+s.title+' ('+s.level+')</option>';
-    }
-  });
-}
+// updateReportsTo() is in form.js
 
-function addSubordinate(sel){
-  var id=sel.value;
-  if(!id)return;
-  if(!S.newSubordinates)S.newSubordinates=[];
-  if(!S.newSubordinates.includes(id))S.newSubordinates.push(id);
-  render();
-}
+// addSubordinate() is in form.js
 
-function showAddModal(){S.modal='addstaff';render();}
-async function addStaff(){
-  var f={name:document.getElementById('nn').value,title:document.getElementById('nt').value,dept:document.getElementById('nd').value,base:document.getElementById('nb').value,level:document.getElementById('nl').value,phone:document.getElementById('np').value,email:document.getElementById('ne').value,reportsTo:document.getElementById('nr').value};
-  if(!f.name||!f.title||!f.dept||!f.base||!f.level){alert('Remplir les champs obligatoires');return;}
-  var px=f.base.slice(0,3).toUpperCase(),nums=STAFF.filter(function(s){return s.id.startsWith(px);}).map(function(s){return parseInt(s.id.split('-')[1]);});
-  var ns={id:px+'-'+((nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo==="NA"?"N/A":f.reportsTo||"N/A",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"};
-  if(AUTH.org_id){var r=await sb.from('staff').insert({id:ns.id,org_id:AUTH.org_id,base:ns.base,name:ns.name,title:ns.title,dept:ns.dept,level:ns.level,reports_to:ns.reportsTo,phone:ns.phone,email:ns.email});if(r.error){alert('Erreur: '+r.error.message);return;}}
-  STAFF.push(ns);
-  
-  // Update subordinates' reportsTo
-  var subs=S.newSubordinates||[];
-  subs.forEach(function(sid){
-    var sub=STAFF.find(function(s){return s.id===sid;});
-    if(sub){
-      sub.reportsTo=ns.name;
-      // Update in Supabase too
-      if(AUTH.org_id){
-        sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);
-      }
-    }
-  });
-  
-  saveStaff();
-  // Reset tree layout so new staff appears at correct position
-  if(S.treePositions[ns.base])delete S.treePositions[ns.base];
-  if(S.treePositions[S.ob])delete S.treePositions[S.ob];
-  saveTree();
-  S.newSubordinates=[];
-  S.modal=null;
-  // Switch to orgchart to show new staff in hierarchy
-  S.tab='orgchart';
-  S.ob=ns.base;
-  S.od='All';
-  render();
-}
+// showAddModal() is in form.js
+// addStaff() is in form.js
 async function rmStaff(id){
   var p=STAFF.find(function(s){return s.id===id;});
   if(!p||!confirm('Supprimer '+p.name+' ?'))return;
@@ -925,56 +869,9 @@ function renderModal(){
     return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">'+title+'</div><div class="msub">'+sub+'</div><div class="qr-container" id="qr-target"></div><div style="font-size:8.5px;color:#4A6361;text-align:center;margin:6px 0;font-style:italic">'+note+'</div><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Fermer</button></div></div>';
   }
   if(S.modal==='addstaff'){
-    S.newSubordinates=S.newSubordinates||[];
-    var h='<div class="mbg" onclick="if(event.target===this){S.modal=null;S.newSubordinates=[];render()}"><div class="mbox" onclick="event.stopPropagation()"><div class="mh2">+ Ajouter un staff</div><div class="msub">Champs * obligatoires</div>';
-    h+='<div class="form-group"><label class="form-label">Nom *</label><input class="form-input" id="nn" placeholder="Nom complet"></div>';
-    h+='<div class="form-group"><label class="form-label">Poste *</label><input class="form-input" id="nt" placeholder="Intitulé du poste"></div>';
-    h+='<div class="form-group"><label class="form-label">Département *</label><select class="form-select" id="nd"><option value="">Choisir...</option>';
-    DEPTS.forEach(function(d){h+='<option>'+d+'</option>';});
-    h+='</select></div><div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb" onchange="updateReportsTo()"><option value="">Choisir...</option>';
-    BASES.forEach(function(b){h+='<option>'+b+'</option>';});
-    h+='</select></div><div class="form-group"><label class="form-label">Niveau *</label><select class="form-select" id="nl"><option value="">Choisir...</option><option value="L1">L1 — Directeur</option><option value="L2">L2 — Manager</option><option value="L3">L3 — Officer</option><option value="L4">L4 — Field Staff</option></select></div>';
-    h+='<div class="form-group"><label class="form-label">Supérieur hiérarchique</label>';
-    h+='<select class="form-select" id="nr" style="width:100%">';
-    h+='<option value="NA">N/A — Directeur de base</option>';
-    h+='<option value="" disabled>── Choisir une base d\'abord ──</option>';
-    h+='</select>';
-    h+='<div style="font-size:9px;color:#4A6361;margin-top:3px">Se met à jour selon la base sélectionnée</div>';
-    h+='</div>';
-    // Subordinates section
-    h+='<div class="form-group">';
-    h+='<label class="form-label">Subordonnés</label>';
-    h+='<div id="subs-list" style="margin-bottom:6px">';
-    if(S.newSubordinates&&S.newSubordinates.length){
-      S.newSubordinates.forEach(function(sid,i){
-        var sp=STAFF.find(function(s){return s.id===sid;});
-        if(!sp)return;
-        h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#E8F4F3;border-radius:5px;margin-bottom:4px">';
-        h+='<span style="flex:1;font-size:11px;color:#1C2B2A">'+he(sp.name)+' <span style="color:#4A6361;font-size:9px">'+sp.title+'</span></span>';
-        h+='<button onclick="S.newSubordinates.splice('+i+',1);render()" style="background:transparent;border:none;color:#C0392B;font-size:14px;cursor:pointer">×</button>';
-        h+='</div>';
-      });
-    } else {
-      h+='<div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div>';
-    }
-    h+='</div>';
-    h+='<select id="sub-picker" class="form-select" onchange="addSubordinate(this)" style="width:100%">';
-    h+='<option value="">+ Ajouter un subordonné...</option>';
-    h+='</select>';
-    h+='<div style="font-size:9px;color:#4A6361;margin-top:3px">Se met à jour selon la base sélectionnée</div>';
-    h+='</div>';
-    h+='<div class="form-group"><label class="form-label">Téléphone</label><input class="form-input" id="np" placeholder="+000 00 000 0000"></div>';
-    h+='<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="ne" placeholder="nom@belita.org"></div>';
-    h+='<button class="mbtn" style="background:#C9A84C;color:#1C2B2A" onclick="addStaff()">Enregistrer</button><button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Annuler</button></div></div>';
-    return h;
+    return renderAddStaffModal();
   }
-  return'';
-}
-
-function render(){
-  var body=S.tab==="directory"?renderDir():S.tab==="orgchart"?renderOrg():renderCT();
-  document.getElementById("app").innerHTML=renderNav()+'<div class="main">'+body+'</div>'+renderModal();
-  if(S.tab==='commtree') attachTreeListeners();
+    if(S.tab==='commtree') attachTreeListeners();
 }
 loadTree();init();
 
