@@ -8,10 +8,16 @@ function showAddModal() {
   newSubs = [];
   S.modal = 'addstaff';
   render();
+  setTimeout(function() {
+    var nb = document.getElementById('nb');
+    if (nb) {
+      nb.addEventListener('change', function() { updateReportsTo(); });
+    }
+  }, 50);
 }
 
 function updateReportsTo() {
-  var base = document.getElementById('nb') ? document.getElementById('nb').value : '';
+  var nbEl = document.getElementById('nb') || document.getElementById('nb-select'); var base = nbEl ? nbEl.value : '';
   var sel = document.getElementById('nr');
   var subSel = document.getElementById('sub-picker');
   if (!sel) return;
@@ -99,7 +105,7 @@ function renderAddStaffModal() {
 
   // Base
   h += '<div class="form-group"><label class="form-label">Base *</label>'
-    + '<select class="form-select" id="nb" onchange="updateReportsTo()"><option value="">Choisir...</option>';
+    + '<select class="form-select" id="nb" id="nb-select" onchange="updateReportsTo()"><option value="">Choisir...</option>';
   BASES.forEach(function(b) { h += '<option value="' + b + '">' + b + '</option>'; });
   h += '</select></div>';
 
