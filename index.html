@@ -455,70 +455,107 @@ function showAddModal() {
   newSubs = [];
   S.modal = 'addstaff';
   render();
-  setTimeout(function() {
-    var nb = document.getElementById('nb');
-    if (nb) nb.onchange = function() { updateReportsTo(this.value); };
-    var sp = document.getElementById('sub-picker');
-    if (sp) sp.onchange = function() { if(this.value) { addSubordinate(this.value); this.value=''; } };
-  }, 80);
 }
 
-function updateReportsTo(base) {
-  var sel = document.getElementById('nr');
-  var subSel = document.getElementById('sub-picker');
-  if (!sel || !base) return;
-  sel.innerHTML = '<option value="NA">N/A — Directeur de base</option>';
-  if (subSel) subSel.innerHTML = '<option value="">+ Ajouter un subordonné...</option>';
-  STAFF.filter(function(s){return s.base===base;})
-    .sort(function(a,b){return a.name.localeCompare(b.name);})
-    .forEach(function(s){
-      sel.innerHTML += '<option value="'+s.name+'">'+s.name+' — '+s.title+' ('+s.level+')</option>';
-      if(subSel && newSubs.indexOf(s.id)===-1)
-        subSel.innerHTML += '<option value="'+s.id+'">'+s.name+' — '+s.title+' ('+s.level+')</option>';
-    });
-}
-
-function addSubordinate(id) {
-  if (!id || newSubs.indexOf(id)!==-1) return;
-  newSubs.push(id);
-  var subSel = document.getElementById('sub-picker');
-  if (subSel) { var o=subSel.querySelector('option[value="'+id+'"]'); if(o) o.remove(); }
-  renderSubsList();
-}
-
-function removeSubordinate(id) {
-  newSubs = newSubs.filter(function(s){return s!==id;});
-  var sub = STAFF.find(function(s){return s.id===id;});
-  var picker = document.getElementById('sub-picker');
-  if(sub && picker) picker.innerHTML += '<option value="'+sub.id+'">'+sub.name+' — '+sub.title+' ('+sub.level+')</option>';
-  renderSubsList();
+function subItem(sid) {
+  var s = STAFF.find(function(x){return x.id===sid;});
+  if(!s) return '';
+  var ini = s.name.split(' ').filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');
+  var d = document.createElement('div');
+  d.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:#E8F4F3;border-radius:5px;margin-bottom:4px';
+  d.innerHTML = '<div style="width:26px;height:26px;border-radius:50%;background:#1A6B65;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700;flex-shrink:0">'+ini+'</div>'
+    +'<span style="flex:1;font-size:11px;color:#1C2B2A;font-weight:500">'+s.name+'</span>'
+    +'<span style="font-size:9px;color:#4A6361">'+s.title+'</span>';
+  var btn = document.createElement('button');
+  btn.textContent = '× Retirer';
+  btn.style.cssText = 'background:#FEF5F5;border:1px solid #C0392B;border-radius:4px;color:#C0392B;font-size:11px;cursor:pointer;padding:2px 7px;flex-shrink:0';
+  btn.onclick = function(){ removeSub(sid); };
+  d.appendChild(btn);
+  return d;
 }
 
 function renderSubsList() {
   var c = document.getElementById('subs-list');
-  if (!c) return;
-  if (!newSubs.length) { c.innerHTML='<div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div>'; return; }
+  if(!c) return;
   c.innerHTML = '';
-  newSubs.forEach(function(sid){
-    var sp=STAFF.find(function(s){return s.id===sid;});
-    if(!sp) return;
-    var ini=sp.name.split(' ').filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');
-    c.innerHTML += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#E8F4F3;border-radius:5px;margin-bottom:4px">'
-      +'<div style="width:24px;height:24px;border-radius:50%;background:#1A6B65;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">'+ini+'</div>'
-      +'<span style="flex:1;font-size:11px;color:#1C2B2A">'+sp.name+' <span style="color:#4A6361;font-size:9px">— '+sp.title+'</span></span>'
-      +'<button onclick="removeSubordinate(\''+sid+'\')" style="background:transparent;border:none;color:#C0392B;font-size:16px;cursor:pointer">×</button>'
-      +'</div>';
-  });
+  if(!newSubs.length) {
+    c.innerHTML = '<div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div>';
+    return;
+  }
+  newSubs.forEach(function(sid){ var el=subItem(sid); if(el) c.appendChild(el); });
+}
+
+function addSub() {
+  var sp = document.getElementById('sub-picker');
+  if(!sp || !sp.value) { alert('Sélectionner un subordonné'); return; }
+  var id = sp.value;
+  if(newSubs.indexOf(id) !== -1) { alert('Déjà ajouté'); return; }
+  newSubs.push(id);
+  var opt = sp.querySelector('option[value="'+id+'"]');
+  if(opt) opt.remove();
+  sp.value = '';
+  renderSubsList();
+}
+
+function removeSub(id) {
+  newSubs = newSubs.filter(function(s){return s!==id;});
+  var sub = STAFF.find(function(s){return s.id===id;});
+  var sp = document.getElementById('sub-picker');
+  if(sub && sp) {
+    var opt = document.createElement('option');
+    opt.value = sub.id;
+    opt.textContent = sub.name + ' — ' + sub.title + ' (' + sub.level + ')';
+    sp.appendChild(opt);
+  }
+  renderSubsList();
+}
+
+function filterByBase(base) {
+  var nr = document.getElementById('nr');
+  var sp = document.getElementById('sub-picker');
+  var staff = base
+    ? STAFF.filter(function(s){return s.base===base;})
+    : STAFF.slice();
+  staff.sort(function(a,b){return a.name.localeCompare(b.name);});
+  if(nr) {
+    nr.innerHTML = '<option value="NA">N/A — Directeur de base</option>';
+    staff.forEach(function(s){
+      var o = document.createElement('option');
+      o.value = s.name;
+      o.textContent = s.name + ' — ' + s.title + ' (' + s.level + ')';
+      nr.appendChild(o);
+    });
+  }
+  if(sp) {
+    sp.innerHTML = '<option value="">Sélectionner...</option>';
+    staff.filter(function(s){return newSubs.indexOf(s.id)===-1;}).forEach(function(s){
+      var o = document.createElement('option');
+      o.value = s.id;
+      o.textContent = s.name + ' — ' + s.title + ' (' + s.level + ')';
+      sp.appendChild(o);
+    });
+  }
 }
 
 function renderAddStaffModal() {
-  var dOpts='', bOpts='', lOpts='<option value="">Choisir...</option>'
-    +'<option value="L1">L1 — Directeur</option>'
-    +'<option value="L2">L2 — Manager</option>'
-    +'<option value="L3">L3 — Officer</option>'
-    +'<option value="L4">L4 — Field Staff</option>';
-  DEPTS.forEach(function(d){dOpts+='<option value="'+d+'">'+d+'</option>';});
-  BASES.forEach(function(b){bOpts+='<option value="'+b+'">'+b+'</option>';});
+  var dOpts = DEPTS.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
+  var bOpts = BASES.map(function(b){return '<option value="'+b+'">'+b+'</option>';}).join('');
+  var supOpts = '<option value="NA">N/A — Directeur de base</option>';
+  BASES.forEach(function(b){
+    var bs = STAFF.filter(function(s){return s.base===b;}).sort(function(a,x){return a.name.localeCompare(x.name);});
+    if(!bs.length) return;
+    supOpts += '<optgroup label="' + b + '">';
+    bs.forEach(function(s){ supOpts += '<option value="'+s.name+'">'+s.name+' — '+s.title+' ('+s.level+')</option>'; });
+    supOpts += '</optgroup>';
+  });
+  var subOpts = '<option value="">Sélectionner...</option>';
+  BASES.forEach(function(b){
+    var bs = STAFF.filter(function(s){return s.base===b;}).sort(function(a,x){return a.name.localeCompare(x.name);});
+    if(!bs.length) return;
+    subOpts += '<optgroup label="' + b + '">';
+    bs.forEach(function(s){ subOpts += '<option value="'+s.id+'">'+s.name+' — '+s.title+' ('+s.level+')</option>'; });
+    subOpts += '</optgroup>';
+  });
 
   return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}">'
     +'<div class="mbox" onclick="event.stopPropagation()">'
@@ -527,21 +564,21 @@ function renderAddStaffModal() {
     +'<div class="form-group"><label class="form-label">Nom *</label><input type="text" class="form-input" id="nn" placeholder="Prénom Nom"></div>'
     +'<div class="form-group"><label class="form-label">Poste *</label><input type="text" class="form-input" id="nt" placeholder="ex: Medical Officer"></div>'
     +'<div class="form-group"><label class="form-label">Département *</label><select class="form-select" id="nd"><option value="">Choisir...</option>'+dOpts+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb"><option value="">Choisir...</option>'+bOpts+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Niveau *</label><select class="form-select" id="nl">'+lOpts+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Supérieur hiérarchique</label>'
-    +'<select class="form-select" id="nr"><option value="NA">N/A — Directeur de base</option><option disabled>── Choisir une base d\'abord ──</option></select>'
-    +'<div style="font-size:9px;color:#1A6B65;margin-top:3px">↑ Se remplit après choix de la base</div></div>'
+    +'<div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb" onchange="filterByBase(this.value)"><option value="">Choisir...</option>'+bOpts+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Niveau *</label><select class="form-select" id="nl"><option value="">Choisir...</option><option value="L1">L1 — Directeur</option><option value="L2">L2 — Manager</option><option value="L3">L3 — Officer</option><option value="L4">L4 — Field Staff</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Supérieur hiérarchique</label><select class="form-select" id="nr">'+supOpts+'</select><div style="font-size:9px;color:#1A6B65;margin-top:3px">Se filtre selon la base choisie</div></div>'
     +'<div class="form-group"><label class="form-label">Subordonnés</label>'
-    +'<div id="subs-list"><div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div></div>'
-    +'<select class="form-select" id="sub-picker" style="margin-top:6px"><option value="">+ Ajouter un subordonné...</option></select>'
-    +'<div style="font-size:9px;color:#1A6B65;margin-top:3px">↑ Se remplit après choix de la base</div></div>'
+    +'<div id="subs-list" style="margin-bottom:8px"><div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div></div>'
+    +'<div style="display:flex;gap:8px;align-items:center"><select class="form-select" id="sub-picker" style="flex:1">'+subOpts+'</select>'
+    +'<button onclick="addSub()" style="padding:8px 14px;background:#1A6B65;color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">+ Ajouter</button>'
+    +'</div><div style="font-size:9px;color:#1A6B65;margin-top:3px">Se filtre selon la base choisie</div></div>'
     +'<div class="form-group"><label class="form-label">Téléphone</label><input type="text" class="form-input" id="np" placeholder="+000 00 000 0000"></div>'
     +'<div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="ne" placeholder="nom@belita.org"></div>'
-    +'<button class="mbtn" style="background:#C9A84C;color:#1C2B2A" onclick="addStaff()">💾 Enregistrer</button>'
+    +'<button class="mbtn" style="background:#C9A84C;color:#1C2B2A" onclick="addStaff()">Enregistrer</button>'
     +'<button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Annuler</button>'
     +'</div></div>';
 }
+
 
 async function addStaff() {
   var f={
