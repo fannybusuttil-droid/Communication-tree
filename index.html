@@ -470,7 +470,18 @@ async function addStaff(){
   var px=f.base.slice(0,3).toUpperCase(),nums=STAFF.filter(function(s){return s.id.startsWith(px);}).map(function(s){return parseInt(s.id.split('-')[1]);});
   var ns={id:px+'-'+((nums.length?Math.max.apply(null,nums)+1:1)).toString().padStart(3,'0'),base:f.base,name:f.name,title:f.title,dept:f.dept,reportsTo:f.reportsTo==="NA"?"N/A":f.reportsTo||"N/A",level:f.level,phone:f.phone||"+000 00 000 0000",email:f.email||f.name.toLowerCase().replace(/\s/g,'.')+"@belita.org"};
   if(AUTH.org_id){var r=await sb.from('staff').insert({id:ns.id,org_id:AUTH.org_id,base:ns.base,name:ns.name,title:ns.title,dept:ns.dept,level:ns.level,reports_to:ns.reportsTo,phone:ns.phone,email:ns.email});if(r.error){alert('Erreur: '+r.error.message);return;}}
-  STAFF.push(ns);saveStaff();S.modal=null;render();
+  STAFF.push(ns);
+  saveStaff();
+  // Reset tree layout so new staff appears at correct position
+  if(S.treePositions[ns.base])delete S.treePositions[ns.base];
+  if(S.treePositions[S.ob])delete S.treePositions[S.ob];
+  saveTree();
+  S.modal=null;
+  // Switch to orgchart to show new staff in hierarchy
+  S.tab='orgchart';
+  S.ob=ns.base;
+  S.od='All';
+  render();
 }
 async function rmStaff(id){
   var p=STAFF.find(function(s){return s.id===id;});
