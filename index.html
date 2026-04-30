@@ -3,8 +3,6 @@
 <title>Belita Communication Tree v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
-<script src="form.js"></script>
-<script src="export.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -882,6 +880,17 @@ function attachTreeListeners(){
       document.addEventListener('mouseup',onTreeUp);
     });
   });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  var h='<div class="main">';
+  if(S.tab==='directory') h+=renderDir();
+  else if(S.tab==='orgchart') h+=renderOrg();
+  else if(S.tab==='commtree') h+=renderCT();
+  h+='</div>';
+  document.getElementById('app').innerHTML=renderNav()+h+renderModal();
+  if(S.tab==='commtree') attachTreeListeners();
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
