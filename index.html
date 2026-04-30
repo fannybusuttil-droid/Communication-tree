@@ -3,6 +3,7 @@
 <title>Belita Communication Tree v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
+<script src="form.js"></script>
 <script src="export.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -448,214 +449,46 @@ function exportPDF(){
   });
 }
 
+// updateReportsTo() is in form.js
 
-var newSubs = [];
+// addSubordinate() is in form.js
 
-function showAddModal() {
-  newSubs = [];
-  S.modal = 'addstaff';
-  render();
-}
-
-function subItem(sid) {
-  var s = STAFF.find(function(x){return x.id===sid;});
-  if(!s) return '';
-  var ini = s.name.split(' ').filter(function(w){return /^[A-Z]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');
-  var d = document.createElement('div');
-  d.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:#E8F4F3;border-radius:5px;margin-bottom:4px';
-  d.innerHTML = '<div style="width:26px;height:26px;border-radius:50%;background:#1A6B65;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700;flex-shrink:0">'+ini+'</div>'
-    +'<span style="flex:1;font-size:11px;color:#1C2B2A;font-weight:500">'+s.name+'</span>'
-    +'<span style="font-size:9px;color:#4A6361">'+s.title+'</span>';
-  var btn = document.createElement('button');
-  btn.textContent = '× Retirer';
-  btn.style.cssText = 'background:#FEF5F5;border:1px solid #C0392B;border-radius:4px;color:#C0392B;font-size:11px;cursor:pointer;padding:2px 7px;flex-shrink:0';
-  btn.onclick = function(){ removeSub(sid); };
-  d.appendChild(btn);
-  return d;
-}
-
-function renderSubsList() {
-  var c = document.getElementById('subs-list');
-  if(!c) return;
-  c.innerHTML = '';
-  if(!newSubs.length) {
-    c.innerHTML = '<div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div>';
-    return;
-  }
-  newSubs.forEach(function(sid){ var el=subItem(sid); if(el) c.appendChild(el); });
-}
-
-function addSub() {
-  var sp = document.getElementById('sub-picker');
-  if(!sp || !sp.value) { alert('Sélectionner un subordonné'); return; }
-  var id = sp.value;
-  if(newSubs.indexOf(id) !== -1) { alert('Déjà ajouté'); return; }
-  newSubs.push(id);
-  var opt = sp.querySelector('option[value="'+id+'"]');
-  if(opt) opt.remove();
-  sp.value = '';
-  renderSubsList();
-}
-
-function removeSub(id) {
-  newSubs = newSubs.filter(function(s){return s!==id;});
-  var sub = STAFF.find(function(s){return s.id===id;});
-  var sp = document.getElementById('sub-picker');
-  if(sub && sp) {
-    var opt = document.createElement('option');
-    opt.value = sub.id;
-    opt.textContent = sub.name + ' — ' + sub.title + ' (' + sub.level + ')';
-    sp.appendChild(opt);
-  }
-  renderSubsList();
-}
-
-function filterByBase(base) {
-  var nr = document.getElementById('nr');
-  var sp = document.getElementById('sub-picker');
-  var staff = base
-    ? STAFF.filter(function(s){return s.base===base;})
-    : STAFF.slice();
-  staff.sort(function(a,b){return a.name.localeCompare(b.name);});
-  if(nr) {
-    nr.innerHTML = '<option value="NA">N/A — Directeur de base</option>';
-    staff.forEach(function(s){
-      var o = document.createElement('option');
-      o.value = s.name;
-      o.textContent = s.name + ' — ' + s.title + ' (' + s.level + ')';
-      nr.appendChild(o);
-    });
-  }
-  if(sp) {
-    sp.innerHTML = '<option value="">Sélectionner...</option>';
-    staff.filter(function(s){return newSubs.indexOf(s.id)===-1;}).forEach(function(s){
-      var o = document.createElement('option');
-      o.value = s.id;
-      o.textContent = s.name + ' — ' + s.title + ' (' + s.level + ')';
-      sp.appendChild(o);
-    });
-  }
-}
-
-function renderAddStaffModal() {
-  var dOpts = DEPTS.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
-  var bOpts = BASES.map(function(b){return '<option value="'+b+'">'+b+'</option>';}).join('');
-  var supOpts = '<option value="NA">N/A — Directeur de base</option>';
-  BASES.forEach(function(b){
-    var bs = STAFF.filter(function(s){return s.base===b;}).sort(function(a,x){return a.name.localeCompare(x.name);});
-    if(!bs.length) return;
-    supOpts += '<optgroup label="' + b + '">';
-    bs.forEach(function(s){ supOpts += '<option value="'+s.name+'">'+s.name+' — '+s.title+' ('+s.level+')</option>'; });
-    supOpts += '</optgroup>';
-  });
-  var subOpts = '<option value="">Sélectionner...</option>';
-  BASES.forEach(function(b){
-    var bs = STAFF.filter(function(s){return s.base===b;}).sort(function(a,x){return a.name.localeCompare(x.name);});
-    if(!bs.length) return;
-    subOpts += '<optgroup label="' + b + '">';
-    bs.forEach(function(s){ subOpts += '<option value="'+s.id+'">'+s.name+' — '+s.title+' ('+s.level+')</option>'; });
-    subOpts += '</optgroup>';
-  });
-
-  return '<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}">'
-    +'<div class="mbox" onclick="event.stopPropagation()">'
-    +'<div class="mh2">+ Ajouter un staff</div>'
-    +'<div class="msub">Champs * obligatoires</div>'
-    +'<div class="form-group"><label class="form-label">Nom *</label><input type="text" class="form-input" id="nn" placeholder="Prénom Nom"></div>'
-    +'<div class="form-group"><label class="form-label">Poste *</label><input type="text" class="form-input" id="nt" placeholder="ex: Medical Officer"></div>'
-    +'<div class="form-group"><label class="form-label">Département *</label><select class="form-select" id="nd"><option value="">Choisir...</option>'+dOpts+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Base *</label><select class="form-select" id="nb" onchange="filterByBase(this.value)"><option value="">Choisir...</option>'+bOpts+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Niveau *</label><select class="form-select" id="nl"><option value="">Choisir...</option><option value="L1">L1 — Directeur</option><option value="L2">L2 — Manager</option><option value="L3">L3 — Officer</option><option value="L4">L4 — Field Staff</option></select></div>'
-    +'<div class="form-group"><label class="form-label">Supérieur hiérarchique</label><select class="form-select" id="nr">'+supOpts+'</select><div style="font-size:9px;color:#1A6B65;margin-top:3px">Se filtre selon la base choisie</div></div>'
-    +'<div class="form-group"><label class="form-label">Subordonnés</label>'
-    +'<div id="subs-list" style="margin-bottom:8px"><div style="font-size:10px;color:#aaa;font-style:italic;padding:4px 0">Aucun subordonné ajouté</div></div>'
-    +'<div style="display:flex;gap:8px;align-items:center"><select class="form-select" id="sub-picker" style="flex:1">'+subOpts+'</select>'
-    +'<button onclick="addSub()" style="padding:8px 14px;background:#1A6B65;color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">+ Ajouter</button>'
-    +'</div><div style="font-size:9px;color:#1A6B65;margin-top:3px">Se filtre selon la base choisie</div></div>'
-    +'<div class="form-group"><label class="form-label">Téléphone</label><input type="text" class="form-input" id="np" placeholder="+000 00 000 0000"></div>'
-    +'<div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="ne" placeholder="nom@belita.org"></div>'
-    +'<button class="mbtn" style="background:#C9A84C;color:#1C2B2A" onclick="addStaff()">Enregistrer</button>'
-    +'<button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;render()">Annuler</button>'
-    +'</div></div>';
-}
-
-
-async function addStaff() {
-  var f={
-    name:document.getElementById('nn').value.trim(),
-    title:document.getElementById('nt').value.trim(),
-    dept:document.getElementById('nd').value,
-    base:document.getElementById('nb').value,
-    level:document.getElementById('nl').value,
-    phone:document.getElementById('np').value.trim()||'+000 00 000 0000',
-    email:document.getElementById('ne').value.trim(),
-    reportsTo:document.getElementById('nr').value
-  };
-  if(!f.name||!f.title||!f.dept||!f.base||!f.level){alert('Remplir les champs obligatoires (*)');return;}
-  if(!f.email) f.email=f.name.toLowerCase().replace(/\s+/g,'.')+'@belita.org';
-  if(f.reportsTo==='NA'||!f.reportsTo) f.reportsTo='N/A';
-  var px=f.base.slice(0,3).toUpperCase();
-  var nums=STAFF.filter(function(s){return s.id.startsWith(px);}).map(function(s){return parseInt(s.id.split('-')[1]);});
-  var ns={id:px+'-'+(nums.length?Math.max.apply(null,nums)+1:1).toString().padStart(3,'0'),
-    base:f.base,name:f.name,title:f.title,dept:f.dept,level:f.level,
-    reportsTo:f.reportsTo,phone:f.phone,email:f.email};
-  if(AUTH.org_id){
-    var r=await sb.from('staff').insert({id:ns.id,org_id:AUTH.org_id,base:ns.base,name:ns.name,
-      title:ns.title,dept:ns.dept,level:ns.level,reports_to:ns.reportsTo,phone:ns.phone,email:ns.email});
-    if(r.error){alert('Erreur: '+r.error.message);return;}
-  }
-  STAFF.push(ns);
-
-  // Update direct subordinates reportsTo - wait for all Supabase updates
-  var subUpdates = newSubs.map(async function(sid){
-    var sub=STAFF.find(function(s){return s.id===sid;});
-    if(!sub) return;
-    sub.reportsTo = ns.name;
-    if(AUTH.org_id){
-      await sb.from('staff').update({reports_to:ns.name}).eq('id',sid).eq('org_id',AUTH.org_id);
-    }
-  });
-  if(subUpdates.length) await Promise.all(subUpdates);
-
-  // Sub-subordinates follow automatically - their reportsTo still points
-  // to their direct manager who is now under ns
-
-  saveStaff();
-
-  // Reset ALL tree layouts to force full recalculation
-  S.treePositions = {};
-  S.customLines = {};
-  S.removedLines = {};
-  saveTree();
-
-  newSubs = [];
-  S.modal = null;
-  S.tab = 'orgchart';
-  S.ob = ns.base;
-  S.od = 'All';
-
-  // Reload fresh data from Supabase to reflect all changes
-  if(AUTH.org_id) {
-    var fresh = await sb.from('staff').select('*').eq('org_id',AUTH.org_id).order('base').order('name');
-    if(!fresh.error && fresh.data && fresh.data.length > 0) {
-      STAFF = fresh.data.map(function(s){
-        return {id:s.id,base:s.base,name:s.name,title:s.title,dept:s.dept,
-          level:s.level,reportsTo:s.reports_to||'',phone:s.phone||'',email:s.email||''};
-      });
-      saveStaff();
-    }
-  }
-
-  render();
-  alert('✅ ' + ns.name + ' ajouté dans ' + ns.base + ' !');
-}
-
-
+// showAddModal() is in form.js
+// addStaff() is in form.js
 async function rmStaff(id){
   var p=STAFF.find(function(s){return s.id===id;});
-  if(!p||!confirm('Supprimer '+p.name+' ?'))return;
+  if(!p)return;
+  var subs=STAFF.filter(function(s){return s.reportsTo===p.name;});
+  if(subs.length>0){
+    S.modal='reassign';
+    S.reassign={personToRemove:p,subordinates:subs};
+    render();
+    return;
+  }
+  if(!confirm('Supprimer '+p.name+' ?'))return;
+  await doRemoveStaff(id);
+}
+
+async function doRemoveStaff(id){
   if(AUTH.org_id){var r=await sb.from('staff').delete().eq('id',id).eq('org_id',AUTH.org_id);if(r.error){alert('Erreur: '+r.error.message);return;}}
   STAFF=STAFF.filter(function(s){return s.id!==id;});saveStaff();render();
+}
+
+async function confirmReassign(){
+  var newSupId=document.getElementById('new-supervisor').value;
+  if(!newSupId){alert('Choisir un nouveau superviseur');return;}
+  var newSup=STAFF.find(function(s){return s.id===newSupId;});
+  if(!newSup)return;
+  var subs=S.reassign.subordinates;
+  for(var i=0;i<subs.length;i++){
+    var sub=subs[i];
+    sub.reportsTo=newSup.name;
+    if(AUTH.org_id){await sb.from('staff').update({reports_to:newSup.name}).eq('id',sub.id).eq('org_id',AUTH.org_id);}
+  }
+  await doRemoveStaff(S.reassign.personToRemove.id);
+  S.modal=null;
+  S.reassign=null;
+  render();
 }
 
 function showQRDept(base,dept){
@@ -853,7 +686,7 @@ function renderOrg(){
 // ── Comm Tree ─────────────────────────────────────────────────────────────────
 function renderCT(){
   var base=S.cb;
-  var bb=BASES.map(function(b){return '<button class="ob'+(S.cb===b?" on":"")+'" style="'+(S.cb===b?"background:"+BC[b]+";color:white;border-color:"+BC[b]:"")+'" onclick="S.cb=\''+b+'\';render()">'+b+'</button>';}).join("");
+  var bb=BASES.map(function(b){return '<button class="ob'+(S.cb===b?" on":"")+'" style="'+(S.cb===b?"background:"+BC[b]+";color:white;border-color:"+BC[b]:"")+'" onclick="S.cb=\''+b+'\';S.lineMode=false;S.lineStart=null;render()">'+b+'</button>';}).join("");
   var h='<div style="margin-bottom:10px">'+bb+'</div>';
 
 
@@ -1051,17 +884,6 @@ function attachTreeListeners(){
   });
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function render(){
-  var h='<div class="main">';
-  if(S.tab==='directory') h+=renderDir();
-  else if(S.tab==='orgchart') h+=renderOrg();
-  else if(S.tab==='commtree') h+=renderCT();
-  h+='</div>';
-  document.getElementById('app').innerHTML=renderNav()+h+renderModal();
-  if(S.tab==='commtree') attachTreeListeners();
-}
-
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function renderModal(){
   if(!S.modal)return'';
@@ -1078,7 +900,33 @@ function renderModal(){
   if(S.modal==='addstaff'){
     return renderAddStaffModal();
   }
-  return '';
+  if(S.modal==='reassign'){
+    var p=S.reassign.personToRemove;
+    var subs=S.reassign.subordinates;
+    var candidates=STAFF.filter(function(s){return s.id!==p.id&&s.base===p.base;}).sort(function(a,b){return a.name.localeCompare(b.name);});
+    var opts=candidates.map(function(s){return '<option value="'+s.id+'">'+he(s.name)+' — '+he(s.title)+' ('+s.level+')</option>';}).join('');
+    var subList=subs.map(function(s){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#F2F4F3;border-radius:6px;margin-bottom:4px">'
+        +'<div style="width:4px;height:32px;border-radius:2px;background:'+(LC[s.level]||'#888')+'"></div>'
+        +'<div><div style="font-size:12px;font-weight:600;color:#1C2B2A">'+he(s.name)+'</div>'
+        +'<div style="font-size:10px;color:#4A6361">'+he(s.title)+' · '+s.level+'</div></div>'
+        +'</div>';
+    }).join('');
+    return '<div class="mbg"><div class="mbox" onclick="event.stopPropagation()">'
+      +'<div style="background:#FEF5F5;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:18px">⚠️</span>'
+      +'<div><div style="font-size:13px;font-weight:700;color:#C0392B">Supprimer '+he(p.name)+'</div>'
+      +'<div style="font-size:10px;color:#4A6361">Cette personne a '+subs.length+' subordonné(s) direct(s)</div></div></div>'
+      +'<div style="font-size:11px;color:#4A6361;margin-bottom:8px">Ces personnes n\'auront plus de superviseur direct :</div>'
+      +'<div style="margin-bottom:14px">'+subList+'</div>'
+      +'<div class="form-group"><label class="form-label">Nouveau superviseur direct</label>'
+      +'<select id="new-supervisor" class="form-select"><option value="">Choisir...</option>'+opts+'</select>'
+      +'<div style="font-size:9px;color:#1A6B65;margin-top:4px">Tous les subordonnés seront rattachés à cette personne</div></div>'
+      +'<button class="mbtn" style="background:#C0392B;color:white" onclick="confirmReassign()">✅ Confirmer et supprimer</button>'
+      +'<button class="mbtn" style="background:transparent;color:#4A6361;border:1px solid #e2e6e5" onclick="S.modal=null;S.reassign=null;render()">Annuler</button>'
+      +'</div></div>';
+  }
+  if(S.tab==='commtree') attachTreeListeners();
 }
 loadTree();init();
 
